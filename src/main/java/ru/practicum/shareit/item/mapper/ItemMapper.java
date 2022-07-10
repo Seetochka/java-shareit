@@ -1,16 +1,18 @@
 package ru.practicum.shareit.item.mapper;
 
+import org.springframework.stereotype.Component;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
 
 /**
  * Маппер для вещи, которую могут брать в аренду
  */
+@Component
 public class ItemMapper {
     /**
      * Преобразование модели в DTO
      */
-    public static ItemDto toItemDto(Item item) {
+    public ItemDto toItemDto(Item item) {
         return ItemDto.builder()
                 .id(item.getId())
                 .name(item.getName())
@@ -23,7 +25,7 @@ public class ItemMapper {
     /**
      * Преобразование DTO в модель
      */
-    public static Item toItem(ItemDto itemDto) {
+    public Item toItem(ItemDto itemDto) {
         return Item.builder()
                 .id(itemDto.getId())
                 .name(itemDto.getName())

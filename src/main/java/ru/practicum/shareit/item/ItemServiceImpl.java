@@ -3,6 +3,7 @@ package ru.practicum.shareit.item;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import ru.practicum.shareit.exception.ObjectNotFountException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.dto.ItemDto;
@@ -22,8 +23,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ItemServiceImpl implements ItemService {
     private final UserService userService;
+    private final UserMapper userMapper;
 
     private final ItemRepository itemRepository;
+    private final ItemMapper itemMapper;
 
     /**
      * Создание вещи
@@ -32,7 +35,7 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto createItem(int userId, ItemDto itemDto) throws ObjectNotFountException, ValidationException {
         userService.checkUserId(userId);
 
-        if (itemDto.getName() == null || itemDto.getName().isBlank()) {
+        if (!StringUtils.hasText(itemDto.getName())) {
             throw new ValidationException("Не заполнено поле name", "CreateItem");
         }
 
@@ -46,10 +49,10 @@ public class ItemServiceImpl implements ItemService {
 
         UserDto userDto = userService.getUserById(userId);
 
-        Item item = itemRepository.createItem(userId, ItemMapper.toItem(itemDto), UserMapper.toUser(userDto));
+        Item item = itemRepository.createItem(userId, itemMapper.toItem(itemDto), userMapper.toUser(userDto));
 
         log.info("CreateItem. Создана вещь с id {}", item.getId());
-        return ItemMapper.toItemDto(item);
+        return itemMapper.toItemDto(item);
     }
 
     /**
@@ -57,11 +60,11 @@ public class ItemServiceImpl implements ItemService {
      */
     @Override
     public ItemDto getItemById(int itemId) throws ObjectNotFountException {
-        checkItemId(itemId);
+        itemRepository.checkItemId(itemId);
 
         Item item = itemRepository.getItemById(itemId);
 
-        return ItemMapper.toItemDto(item);
+        return itemMapper.toItemDto(item);
     }
 
     /**
@@ -72,7 +75,7 @@ public class ItemServiceImpl implements ItemService {
         userService.checkUserId(userId);
 
         return itemRepository.getAllByUserId(userId).stream()
-                .map(ItemMapper::toItemDto)
+                .map(itemMapper::toItemDto)
                 .collect(Collectors.toList());
     }
 
@@ -83,16 +86,16 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto updateItem(int userId, int itemId, ItemDto itemDto)
             throws ObjectNotFountException {
         userService.checkUserId(userId);
-        checkItemId(itemId);
+        itemRepository.checkItemId(itemId);
 
         if (itemRepository.checkOwner(userId, itemId)) {
             throw new ObjectNotFountException("Передан неверный владелец вещи", "UpdateItem");
         }
 
-        Item item = itemRepository.updateItem(itemId, ItemMapper.toItem(itemDto));
+        Item item = itemRepository.updateItem(itemId, itemMapper.toItem(itemDto));
 
         log.info("UpdateItem. Обновлены данные вещи с id {}", item.getId());
-        return ItemMapper.toItemDto(item);
+        return itemMapper.toItemDto(item);
     }
 
     /**
@@ -101,7 +104,7 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public int deleteItem(int userId, int itemId) throws ObjectNotFountException {
         userService.checkUserId(userId);
-        checkItemId(itemId);
+        itemRepository.checkItemId(itemId);
 
         int itemDeletedId = itemRepository.deleteItem(itemId);
 
@@ -114,19 +117,13 @@ public class ItemServiceImpl implements ItemService {
      */
     @Override
     public Collection<ItemDto> searchItemByText(String text) {
-        if (text == null || text.isBlank()) {
+        if (!StringUtils.hasText(text)) {
             return Collections.emptyList();
         }
 
         return itemRepository.searchItemByText(text)
                 .stream()
-                .map(ItemMapper::toItemDto)
+                .map(itemMapper::toItemDto)
                 .collect(Collectors.toList());
-    }
-
-    private void checkItemId(int itemId) throws ObjectNotFountException {
-        if (!itemRepository.getAll().containsKey(itemId)) {
-            throw new ObjectNotFountException(String.format("Вещь с id %d не существует", itemId), "CheckItemId");
-        }
     }
 }

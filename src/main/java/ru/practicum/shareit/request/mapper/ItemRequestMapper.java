@@ -1,5 +1,6 @@
 package ru.practicum.shareit.request.mapper;
 
+import org.springframework.stereotype.Component;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.model.User;
@@ -7,11 +8,12 @@ import ru.practicum.shareit.user.model.User;
 /**
  * Маппер запроса вещи
  */
+@Component
 public class ItemRequestMapper {
     /**
      * Преобразование модели в DTO
      */
-    public static ItemRequestDto toItemDto(ItemRequest item) {
+    public ItemRequestDto toItemDto(ItemRequest item) {
         return ItemRequestDto.builder()
                 .id(item.getId())
                 .description(item.getDescription())
@@ -23,7 +25,7 @@ public class ItemRequestMapper {
     /**
      * Преобразование DTO в модель
      */
-    public static ItemRequest toItem(ItemRequestDto itemDto) {
+    public ItemRequest toItem(ItemRequestDto itemDto) {
         return ItemRequest.builder()
                 .id(itemDto.getId())
                 .description(itemDto.getDescription())
@@ -32,7 +34,7 @@ public class ItemRequestMapper {
                 .build();
     }
 
-    private static ItemRequestDto.User toUserItemRequest(User user) {
+    private ItemRequestDto.User toUserItemRequest(User user) {
         return ItemRequestDto.User.builder()
                 .id(user.getId())
                 .name(user.getName())
@@ -40,7 +42,7 @@ public class ItemRequestMapper {
                 .build();
     }
 
-    private static User toUser(ItemRequestDto.User bookingUser) {
+    private User toUser(ItemRequestDto.User bookingUser) {
         return User.builder()
                 .id(bookingUser.getId())
                 .name(bookingUser.getName())

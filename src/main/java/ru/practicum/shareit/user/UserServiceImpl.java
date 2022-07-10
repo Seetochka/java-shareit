@@ -3,6 +3,7 @@ package ru.practicum.shareit.user;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import ru.practicum.shareit.exception.DuplicateEmailException;
 import ru.practicum.shareit.exception.ObjectNotFountException;
 import ru.practicum.shareit.exception.ValidationException;
@@ -13,25 +14,25 @@ import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Objects;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     /**
      * Создание пользователя
      */
     @Override
     public UserDto createUser(UserDto userDto) throws DuplicateEmailException, ValidationException {
-        checkEmail(userDto.getEmail());
+        userRepository.checkEmail(userDto.getEmail());
 
-        User user = userRepository.createUser(UserMapper.toUser(userDto));
+        User user = userRepository.createUser(userMapper.toUser(userDto));
 
         log.info("CreateUser. Создан пользователь с id {}", user.getId());
-        return UserMapper.toUserDto(user);
+        return userMapper.toUserDto(user);
     }
 
     /**
@@ -43,7 +44,7 @@ public class UserServiceImpl implements UserService {
 
         User user = userRepository.getUserById(userId);
 
-        return UserMapper.toUserDto(user);
+        return userMapper.toUserDto(user);
     }
 
     /**
@@ -55,7 +56,7 @@ public class UserServiceImpl implements UserService {
         Collection<UserDto> usersDto = new ArrayList<>();
 
         for (User user : users) {
-            usersDto.add(UserMapper.toUserDto(user));
+            usersDto.add(userMapper.toUserDto(user));
         }
 
         return usersDto;
@@ -69,14 +70,14 @@ public class UserServiceImpl implements UserService {
             throws ObjectNotFountException, ValidationException, DuplicateEmailException {
         checkUserId(userId);
 
-        if (userDto.getEmail() != null) {
-            checkEmail(userDto.getEmail());
+        if (StringUtils.hasText(userDto.getEmail())) {
+            userRepository.checkEmail(userDto.getEmail());
         }
 
-        User user = userRepository.updateUser(userId, UserMapper.toUser(userDto));
+        User user = userRepository.updateUser(userId, userMapper.toUser(userDto));
 
         log.info("UpdateUser. Обновлены данные пользователя с id {}", user.getId());
-        return UserMapper.toUserDto(user);
+        return userMapper.toUserDto(user);
     }
 
     /**
@@ -97,22 +98,6 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public void checkUserId(int userId) throws ObjectNotFountException {
-        if (!userRepository.getAll().containsKey(userId)) {
-            throw new ObjectNotFountException(String.format("Пользователь с id %d не существует", userId),
-                    "CheckUserId");
-        }
-    }
-
-    private void checkEmail(String email) throws DuplicateEmailException, ValidationException {
-        if (email == null) {
-            throw new ValidationException("Не передан обязательный параметр email", "CheckEmail");
-        }
-
-        for (User user : userRepository.getAll().values()) {
-            if (Objects.equals(user.getEmail(), email)) {
-                throw new DuplicateEmailException(String.format("Пользователь с email %s уже существует", email),
-                        "CheckEmail");
-            }
-        }
+        userRepository.checkUserId(userId);
     }
 }

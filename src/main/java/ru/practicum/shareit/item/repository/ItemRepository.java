@@ -1,5 +1,6 @@
 package ru.practicum.shareit.item.repository;
 
+import ru.practicum.shareit.exception.ObjectNotFountException;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
 
@@ -49,4 +50,9 @@ public interface ItemRepository {
      * Проверяет владельца вещи
      */
     boolean checkOwner(int userId, int itemId);
+
+    /**
+     * Проверяет существование вещи
+     */
+    void checkItemId(int itemId) throws ObjectNotFountException;
 }

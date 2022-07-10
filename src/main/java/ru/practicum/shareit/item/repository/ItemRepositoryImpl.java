@@ -1,6 +1,7 @@
 package ru.practicum.shareit.item.repository;
 
 import org.springframework.stereotype.Component;
+import ru.practicum.shareit.exception.ObjectNotFountException;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
 
@@ -108,6 +109,16 @@ public class ItemRepositoryImpl implements ItemRepository {
     @Override
     public boolean checkOwner(int userId, int itemId) {
         return items.get(itemId).getOwner().getId() != userId;
+    }
+
+    /**
+     * Проверяет существование вещи
+     */
+    @Override
+    public void checkItemId(int itemId) throws ObjectNotFountException {
+        if (!getAll().containsKey(itemId)) {
+            throw new ObjectNotFountException(String.format("Вещь с id %d не существует", itemId), "CheckItemId");
+        }
     }
 
     private static int getNextId() {

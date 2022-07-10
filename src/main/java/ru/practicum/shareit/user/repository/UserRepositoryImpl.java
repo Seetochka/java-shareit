@@ -1,10 +1,15 @@
 package ru.practicum.shareit.user.repository;
 
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+import ru.practicum.shareit.exception.DuplicateEmailException;
+import ru.practicum.shareit.exception.ObjectNotFountException;
+import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.user.model.User;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Component
 public class UserRepositoryImpl implements UserRepository {
@@ -66,6 +71,34 @@ public class UserRepositoryImpl implements UserRepository {
         User user = users.remove(userId);
 
         return user.getId();
+    }
+
+    /**
+     * Проверка существования пользователя по id
+     */
+    @Override
+    public void checkUserId(int userId) throws ObjectNotFountException {
+        if (!getAll().containsKey(userId)) {
+            throw new ObjectNotFountException(String.format("Пользователь с id %d не существует", userId),
+                    "CheckUserId");
+        }
+    }
+
+    /**
+     * Проверяет email на дублирование
+     */
+    @Override
+    public void checkEmail(String email) throws DuplicateEmailException, ValidationException {
+        if (!StringUtils.hasText(email)) {
+            throw new ValidationException("Не передан обязательный параметр email", "CheckEmail");
+        }
+
+        for (User user : getAll().values()) {
+            if (Objects.equals(user.getEmail(), email)) {
+                throw new DuplicateEmailException(String.format("Пользователь с email %s уже существует", email),
+                        "CheckEmail");
+            }
+        }
     }
 
     private static int getNextId() {
