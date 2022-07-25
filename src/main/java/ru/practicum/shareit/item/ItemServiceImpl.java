@@ -46,7 +46,7 @@ public class ItemServiceImpl implements ItemService {
      */
     @Override
     public ItemDto createItem(long userId, ItemDto itemDto) throws ObjectNotFountException, ValidationException {
-        userService.getUserById(userId);
+        userService.checkUserExistsById(userId);
 
         if (!StringUtils.hasText(itemDto.getName())) {
             throw new ValidationException("Не заполнено поле name", "CreateItem");
@@ -72,7 +72,7 @@ public class ItemServiceImpl implements ItemService {
      */
     @Override
     public ItemDto getItemById(long userId, long itemId) throws ObjectNotFountException {
-        userService.getUserById(userId);
+        userService.checkUserExistsById(userId);
 
         Item item = itemRepository.findById(itemId).orElseThrow(() -> new ObjectNotFountException(
                 String.format("Вещь с id %d не существует", itemId),
@@ -93,7 +93,7 @@ public class ItemServiceImpl implements ItemService {
      */
     @Override
     public Collection<ItemDto> getAllByUserId(long userId) throws ObjectNotFountException {
-        userService.getUserById(userId);
+        userService.checkUserExistsById(userId);
 
         return itemRepository.findAllByOwnerId(userId).stream()
                 .map(itemMapper::toItemDto)
@@ -107,24 +107,16 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public ItemDto updateItem(long userId, long itemId, ItemDto itemDto)
             throws ObjectNotFountException {
-        userService.getUserById(userId);
+        userService.checkUserExistsById(userId);
         Item itemUpdated = itemMapper.toItem(getItemById(userId, itemId));
 
         if (itemUpdated.getOwner().getId() != userId) {
             throw new ObjectNotFountException("Передан неверный владелец вещи", "UpdateItem");
         }
 
-        if (itemDto.getName() != null) {
-            itemUpdated.setName(itemDto.getName());
-        }
-
-        if (itemDto.getDescription() != null) {
-            itemUpdated.setDescription(itemDto.getDescription());
-        }
-
-        if (itemDto.getAvailable() != null) {
-            itemUpdated.setAvailable(itemDto.getAvailable());
-        }
+        Optional.ofNullable(itemDto.getName()).ifPresent(itemUpdated::setName);
+        Optional.ofNullable(itemDto.getDescription()).ifPresent(itemUpdated::setDescription);
+        Optional.ofNullable(itemDto.getAvailable()).ifPresent(itemUpdated::setAvailable);
 
         log.info("UpdateItem. Обновлены данные вещи с id {}", itemUpdated.getId());
         return itemMapper.toItemDto(itemRepository.save(itemUpdated));
@@ -135,8 +127,8 @@ public class ItemServiceImpl implements ItemService {
      */
     @Override
     public void deleteItem(long userId, long itemId) throws ObjectNotFountException {
-        userService.getUserById(userId);
-        itemRepository.findById(itemId);
+        userService.checkUserExistsById(userId);
+        checkItemExistsById(itemId);
 
         itemRepository.deleteById(itemId);
 
@@ -181,6 +173,19 @@ public class ItemServiceImpl implements ItemService {
 
         log.info("CreateComment. Создан отзыв с id {}", commentCreated.getId());
         return commentMapper.toCommentDto(commentRepository.save(commentCreated));
+    }
+
+    /**
+     * Проверка существования пользователя по id
+     */
+    @Override
+    public void checkItemExistsById(long itemId) throws ObjectNotFountException {
+        if (!itemRepository.existsById(itemId)) {
+            throw new ObjectNotFountException(
+                    String.format("Вещь с id %d не существует", itemId),
+                    "CheckItemExistsById"
+            );
+        }
     }
 
     private ItemDto setBookings(ItemDto itemDto) {

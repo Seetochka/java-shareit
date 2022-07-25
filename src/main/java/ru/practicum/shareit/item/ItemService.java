@@ -46,4 +46,9 @@ public interface ItemService {
      */
     CommentDto createComment(long userId, long itemId, CommentDto commentDto)
             throws ObjectNotFountException, ValidationException;
+
+    /**
+     * Проверка существования вещи по id
+     */
+    void checkItemExistsById(long itemId) throws ObjectNotFountException;
 }

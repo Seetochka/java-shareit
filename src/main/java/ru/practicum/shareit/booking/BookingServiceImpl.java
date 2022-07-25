@@ -42,7 +42,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public CreatedBookingDto createBooking(long userId, CreatedBookingDto bookingDto)
             throws ObjectNotFountException, ValidationException, UserHaveNoRightsException {
-        userService.getUserById(userId);
+        userService.checkUserExistsById(userId);
 
         ItemDto itemDto = itemService.getItemById(userId, bookingDto.getItemId());
 
@@ -107,7 +107,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public GottenBookingDto getBookingById(long userId, long bookingId)
             throws ObjectNotFountException, UserHaveNoRightsException {
-        userService.getUserById(userId);
+        userService.checkUserExistsById(userId);
 
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> new ObjectNotFountException(
                 String.format("Бронирование с id %d не существует", bookingId),
@@ -130,7 +130,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public Collection<GottenBookingDto> getAllByBookerId(long userId, BookingState state)
             throws ObjectNotFountException {
-        userService.getUserById(userId);
+        userService.checkUserExistsById(userId);
 
         Collection<Booking> result;
 
@@ -171,7 +171,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public Collection<GottenBookingDto> getAllByOwnerId(long userId, BookingState state)
             throws ObjectNotFountException {
-        userService.getUserById(userId);
+        userService.checkUserExistsById(userId);
 
         Collection<Booking> result;
 

@@ -10,6 +10,7 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.util.Collection;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -60,13 +61,8 @@ public class UserServiceImpl implements UserService {
     public UserDto updateUser(long userId, UserDto userDto) throws ObjectNotFountException {
         User userUpdated = userMapper.toUser(getUserById(userId));
 
-        if (userDto.getEmail() != null) {
-            userUpdated.setEmail(userDto.getEmail());
-        }
-
-        if (userDto.getName() != null) {
-            userUpdated.setName(userDto.getName());
-        }
+        Optional.ofNullable(userDto.getEmail()).ifPresent(userUpdated::setEmail);
+        Optional.ofNullable(userDto.getName()).ifPresent(userUpdated::setName);
 
         log.info("UpdateUser. Обновлены данные пользователя с id {}", userUpdated.getId());
         return userMapper.toUserDto(userRepository.save(userUpdated));
@@ -77,10 +73,23 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public void deleteUser(long userId) throws ObjectNotFountException {
-        getUserById(userId);
+        checkUserExistsById(userId);
 
         userRepository.deleteById(userId);
 
         log.info("DeleteUser. Удален пользователь с id {}", userId);
+    }
+
+    /**
+     * Проверка существования пользователя по id
+     */
+    @Override
+    public void checkUserExistsById(long userId) throws ObjectNotFountException {
+        if (!userRepository.existsById(userId)) {
+            throw new ObjectNotFountException(
+                    String.format("Пользователь с id %d не существует", userId),
+                    "CheckUserExistsById"
+            );
+        }
     }
 }

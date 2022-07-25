@@ -33,4 +33,9 @@ public interface UserService {
      * Удаление пользователя
      */
     void deleteUser(long userId) throws ObjectNotFountException;
+
+    /**
+     * Проверка существования пользователя по id
+     */
+    void checkUserExistsById(long userId) throws ObjectNotFountException;
 }
