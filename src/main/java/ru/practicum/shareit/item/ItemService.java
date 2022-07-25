@@ -2,8 +2,8 @@ package ru.practicum.shareit.item;
 
 import ru.practicum.shareit.exception.ObjectNotFountException;
 import ru.practicum.shareit.exception.ValidationException;
-import ru.practicum.shareit.item.dto.CommentDto;
-import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.model.Comment;
+import ru.practicum.shareit.item.model.Item;
 
 import java.util.Collection;
 
@@ -14,22 +14,22 @@ public interface ItemService {
     /**
      * Создание вещи
      */
-    ItemDto createItem(long userId, ItemDto itemDto) throws ObjectNotFountException, ValidationException;
+    Item createItem(long userId, Item item) throws ObjectNotFountException, ValidationException;
 
     /**
      * Получение вещи по id
      */
-    ItemDto getItemById(long userId, long itemId) throws ObjectNotFountException;
+    Item getItemById(long userId, long itemId) throws ObjectNotFountException;
 
     /**
      * Получение всех вещей пользователя
      */
-    Collection<ItemDto> getAllByUserId(long userId) throws ObjectNotFountException;
+    Collection<Item> getAllByUserId(long userId) throws ObjectNotFountException;
 
     /**
      * Обновление данных вещи
      */
-    ItemDto updateItem(long userId, long itemId, ItemDto itemDto) throws ObjectNotFountException;
+    Item updateItem(long userId, long itemId, Item item) throws ObjectNotFountException;
 
     /**
      * Удаление вещи
@@ -39,12 +39,12 @@ public interface ItemService {
     /**
      * Поиск вещей по тексту
      */
-    Collection<ItemDto> searchItemByText(String text);
+    Collection<Item> searchItemByText(String text);
 
     /**
      * Создание отзыва
      */
-    CommentDto createComment(long userId, long itemId, CommentDto commentDto)
+    Comment createComment(long userId, long itemId, Comment comment)
             throws ObjectNotFountException, ValidationException;
 
     /**

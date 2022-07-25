@@ -3,9 +3,6 @@ package ru.practicum.shareit.booking;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.booking.dto.CreatedBookingDto;
-import ru.practicum.shareit.booking.dto.GottenBookingDto;
-import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.enums.BookingState;
@@ -14,15 +11,13 @@ import ru.practicum.shareit.exception.ObjectNotFountException;
 import ru.practicum.shareit.exception.UserHaveNoRightsException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.ItemService;
-import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.mapper.ItemMapper;
+import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.UserService;
 import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -31,56 +26,49 @@ public class BookingServiceImpl implements BookingService {
     private final UserService userService;
     private final ItemService itemService;
 
-    private final ItemMapper itemMapper;
-    private final BookingMapper bookingMapper;
-
     private final BookingRepository bookingRepository;
 
     /**
      * Создание бронирования
      */
     @Override
-    public CreatedBookingDto createBooking(long userId, CreatedBookingDto bookingDto)
+    public Booking createBooking(long userId, Booking booking)
             throws ObjectNotFountException, ValidationException, UserHaveNoRightsException {
         userService.checkUserExistsById(userId);
 
-        ItemDto itemDto = itemService.getItemById(userId, bookingDto.getItemId());
+        Item item = itemService.getItemById(userId, booking.getItem().getId());
 
-        if (!itemDto.getAvailable()) {
+        if (!item.getAvailable()) {
             throw new ValidationException("Нельзя забронировать недоступную вещь", "CreateBooking");
         }
-        if (itemDto.getOwner().getId() == userId) {
+        if (item.getOwner().getId() == userId) {
             throw new UserHaveNoRightsException("Нельзя забронировать вещь владельцу веши", "CreateBooking");
         }
-        if (bookingDto.getStart().isBefore(LocalDateTime.now())) {
+        if (booking.getStart().isBefore(LocalDateTime.now())) {
             throw new ValidationException("Нельзя указать дату начала бронирования из прошлого", "CreateBooking");
         }
-        if (bookingDto.getEnd().isBefore(LocalDateTime.now())) {
+        if (booking.getEnd().isBefore(LocalDateTime.now())) {
             throw new ValidationException("Нельзя указать дату конца бронирования из прошлого", "CreateBooking");
         }
-        if (bookingDto.getEnd().isBefore(bookingDto.getStart())) {
+        if (booking.getEnd().isBefore(booking.getStart())) {
             throw new ValidationException("Нельзя указать дату конца бронирования до начала", "CreateBooking");
         }
 
-        Booking bookingCreated = bookingMapper.toBooking(bookingDto);
-        bookingCreated.setBooker(new User(userId, null, null));
-        bookingCreated.setItem(itemMapper.toItem(itemDto));
-        bookingCreated.setStatus(BookingStatus.WAITING);
+        booking.setBooker(new User(userId, null, null));
+        booking.setItem(item);
+        booking.setStatus(BookingStatus.WAITING);
 
-        log.info("CreateBooking. Создано бронирование с id {}", bookingCreated.getId());
-        return bookingMapper.toCreatedBookingDto(bookingRepository.save(bookingCreated));
+        log.info("CreateBooking. Создано бронирование с id {}", booking.getId());
+        return bookingRepository.save(booking);
     }
 
     /**
      * Подтверждение или отклонение запроса на бронирование
      */
     @Override
-    public GottenBookingDto setApproved(long userId, long bookingId, boolean approved)
+    public Booking setApproved(long userId, long bookingId, boolean approved)
             throws ValidationException, ObjectNotFountException, UserHaveNoRightsException {
-        Booking booking = bookingRepository.findById(bookingId).orElseThrow(() -> new ObjectNotFountException(
-                String.format("Бронирование с id %d не существует", bookingId),
-                "GetBookingById"
-        ));
+        Booking booking = getBookingById(userId, bookingId);
 
         if (booking.getStatus() != BookingStatus.WAITING) {
             throw new ValidationException(
@@ -98,14 +86,14 @@ public class BookingServiceImpl implements BookingService {
 
         booking.setStatus(approved ? BookingStatus.APPROVED : BookingStatus.REJECTED);
 
-        return bookingMapper.toGottenBookingDto(bookingRepository.save(booking));
+        return bookingRepository.save(booking);
     }
 
     /**
      * Получение бронирования по id
      */
     @Override
-    public GottenBookingDto getBookingById(long userId, long bookingId)
+    public Booking getBookingById(long userId, long bookingId)
             throws ObjectNotFountException, UserHaveNoRightsException {
         userService.checkUserExistsById(userId);
 
@@ -121,14 +109,14 @@ public class BookingServiceImpl implements BookingService {
             );
         }
 
-        return bookingMapper.toGottenBookingDto(booking);
+        return booking;
     }
 
     /**
      * Получение всех бронирований текущего пользователя
      */
     @Override
-    public Collection<GottenBookingDto> getAllByBookerId(long userId, BookingState state)
+    public Collection<Booking> getAllByBookerId(long userId, BookingState state)
             throws ObjectNotFountException {
         userService.checkUserExistsById(userId);
 
@@ -160,16 +148,14 @@ public class BookingServiceImpl implements BookingService {
                 result = Collections.emptyList();
         }
 
-        return result.stream()
-                .map(bookingMapper::toGottenBookingDto)
-                .collect(Collectors.toList());
+        return result;
     }
 
     /**
      * Получение бронирований для всех вещей текущего пользователя
      */
     @Override
-    public Collection<GottenBookingDto> getAllByOwnerId(long userId, BookingState state)
+    public Collection<Booking> getAllByOwnerId(long userId, BookingState state)
             throws ObjectNotFountException {
         userService.checkUserExistsById(userId);
 
@@ -201,8 +187,6 @@ public class BookingServiceImpl implements BookingService {
                 result = Collections.emptyList();
         }
 
-        return result.stream()
-                .map(bookingMapper::toGottenBookingDto)
-                .collect(Collectors.toList());
+        return result;
     }
 }

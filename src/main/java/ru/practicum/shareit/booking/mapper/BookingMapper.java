@@ -46,7 +46,7 @@ public class BookingMapper {
                 bookingDto.getId(),
                 bookingDto.getStart(),
                 bookingDto.getEnd(),
-                new Item(bookingDto.getItemId(), null, null, null, null, null, null),
+                new Item(bookingDto.getItemId(), null, null, null, null, null, null, null, null),
                 null,
                 null
         );
@@ -81,6 +81,8 @@ public class BookingMapper {
                 bookingItem.getName(),
                 bookingItem.getDescription(),
                 bookingItem.isAvailable(),
+                null,
+                null,
                 null,
                 null,
                 null

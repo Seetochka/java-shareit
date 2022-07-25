@@ -4,9 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.exception.ObjectNotFountException;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.mapper.UserMapper;
+import ru.practicum.shareit.user.model.User;
 
 import javax.validation.Valid;
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 /**
  * Контроллер отвечающий за действия с пользователем
@@ -16,26 +19,34 @@ import java.util.Collection;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+    private final UserMapper userMapper;
 
     @PostMapping
     public UserDto createUser(@Valid @RequestBody UserDto userDto) {
-        return userService.createUser(userDto);
+        User user = userService.createUser(userMapper.toUser(userDto));
+
+        return userMapper.toUserDto(user);
     }
 
     @GetMapping("/{userId}")
     public UserDto getUserById(@PathVariable long userId) throws ObjectNotFountException {
-        return userService.getUserById(userId);
+        return userMapper.toUserDto((userService.getUserById(userId)));
     }
 
     @GetMapping
     public Collection<UserDto> getAll() {
-        return userService.getAll();
+        return userService.getAll()
+                .stream()
+                .map(userMapper::toUserDto)
+                .collect(Collectors.toList());
     }
 
     @PatchMapping("/{userId}")
     public UserDto updateUser(@PathVariable long userId, @RequestBody UserDto userDto)
             throws ObjectNotFountException {
-        return userService.updateUser(userId, userDto);
+        User user = userService.updateUser(userId, userMapper.toUser(userDto));
+
+        return userMapper.toUserDto(user);
     }
 
     @DeleteMapping("/{userId}")

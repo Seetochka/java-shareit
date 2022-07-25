@@ -3,6 +3,7 @@ package ru.practicum.shareit.item.model;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.model.User;
 
@@ -31,6 +32,10 @@ public class Item {
     @OneToOne()
     @JoinColumn(name = "request_id")
     private ItemRequest request;
+    @Transient
+    private Booking lastBooking;
+    @Transient
+    private Booking nextBooking;
     @OneToMany()
     @JoinColumn(name = "item_id")
     Collection<Comment> comments = new ArrayList<>();

@@ -9,16 +9,11 @@ import ru.practicum.shareit.booking.repository.BookingRepository;
 import ru.practicum.shareit.enums.BookingStatus;
 import ru.practicum.shareit.exception.ObjectNotFountException;
 import ru.practicum.shareit.exception.ValidationException;
-import ru.practicum.shareit.item.dto.CommentDto;
-import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.mapper.CommentMapper;
-import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.UserService;
-import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
@@ -33,10 +28,6 @@ import java.util.stream.Collectors;
 public class ItemServiceImpl implements ItemService {
     private final UserService userService;
 
-    private final UserMapper userMapper;
-    private final ItemMapper itemMapper;
-    private final CommentMapper commentMapper;
-
     private final BookingRepository bookingRepository;
     private final ItemRepository itemRepository;
     private final CommentRepository commentRepository;
@@ -45,33 +36,34 @@ public class ItemServiceImpl implements ItemService {
      * Создание вещи
      */
     @Override
-    public ItemDto createItem(long userId, ItemDto itemDto) throws ObjectNotFountException, ValidationException {
-        userService.checkUserExistsById(userId);
+    public Item createItem(long userId, Item item) throws ObjectNotFountException, ValidationException {
+        User user = userService.getUserById(userId);
 
-        if (!StringUtils.hasText(itemDto.getName())) {
+        if (!StringUtils.hasText(item.getName())) {
             throw new ValidationException("Не заполнено поле name", "CreateItem");
         }
 
-        if (itemDto.getDescription() == null) {
+        if (item.getDescription() == null) {
             throw new ValidationException("Не заполнено поле description", "CreateItem");
         }
 
-        if (itemDto.getAvailable() == null) {
+        if (item.getAvailable() == null) {
             throw new ValidationException("Не заполнено поле available", "CreateItem");
         }
 
-        itemDto.setOwner(new ItemDto.User(userId, null, null));
-        Item itemCreated = itemRepository.save(itemMapper.toItem(itemDto));
+        item.setOwner(user);
+
+        Item itemCreated = itemRepository.save(item);
 
         log.info("CreateItem. Создана вещь с id {}", itemCreated.getId());
-        return itemMapper.toItemDto(itemCreated);
+        return itemCreated;
     }
 
     /**
      * Получение вещи по id
      */
     @Override
-    public ItemDto getItemById(long userId, long itemId) throws ObjectNotFountException {
+    public Item getItemById(long userId, long itemId) throws ObjectNotFountException {
         userService.checkUserExistsById(userId);
 
         Item item = itemRepository.findById(itemId).orElseThrow(() -> new ObjectNotFountException(
@@ -79,24 +71,22 @@ public class ItemServiceImpl implements ItemService {
                 "getItemById"
         ));
 
-        ItemDto itemDto = itemMapper.toItemDto(item);
-
         if (item.getOwner().getId() == userId) {
-            setBookings(itemDto);
+            setBookings(item);
         }
 
-        return itemDto;
+        return item;
     }
 
     /**
      * Получение всех вещей пользователя
      */
     @Override
-    public Collection<ItemDto> getAllByUserId(long userId) throws ObjectNotFountException {
+    public Collection<Item> getAllByUserId(long userId) throws ObjectNotFountException {
         userService.checkUserExistsById(userId);
 
-        return itemRepository.findAllByOwnerId(userId).stream()
-                .map(itemMapper::toItemDto)
+        return itemRepository.findAllByOwnerId(userId)
+                .stream()
                 .map(this::setBookings)
                 .collect(Collectors.toList());
     }
@@ -105,21 +95,20 @@ public class ItemServiceImpl implements ItemService {
      * Обновление данных вещи
      */
     @Override
-    public ItemDto updateItem(long userId, long itemId, ItemDto itemDto)
-            throws ObjectNotFountException {
+    public Item updateItem(long userId, long itemId, Item item) throws ObjectNotFountException {
         userService.checkUserExistsById(userId);
-        Item itemUpdated = itemMapper.toItem(getItemById(userId, itemId));
+        Item itemUpdated = getItemById(userId, itemId);
 
         if (itemUpdated.getOwner().getId() != userId) {
             throw new ObjectNotFountException("Передан неверный владелец вещи", "UpdateItem");
         }
 
-        Optional.ofNullable(itemDto.getName()).ifPresent(itemUpdated::setName);
-        Optional.ofNullable(itemDto.getDescription()).ifPresent(itemUpdated::setDescription);
-        Optional.ofNullable(itemDto.getAvailable()).ifPresent(itemUpdated::setAvailable);
+        Optional.ofNullable(item.getName()).ifPresent(itemUpdated::setName);
+        Optional.ofNullable(item.getDescription()).ifPresent(itemUpdated::setDescription);
+        Optional.ofNullable(item.getAvailable()).ifPresent(itemUpdated::setAvailable);
 
         log.info("UpdateItem. Обновлены данные вещи с id {}", itemUpdated.getId());
-        return itemMapper.toItemDto(itemRepository.save(itemUpdated));
+        return itemRepository.save(itemUpdated);
     }
 
     /**
@@ -139,25 +128,22 @@ public class ItemServiceImpl implements ItemService {
      * Поиск вещей по тексту
      */
     @Override
-    public Collection<ItemDto> searchItemByText(String text) {
+    public Collection<Item> searchItemByText(String text) {
         if (!StringUtils.hasText(text)) {
             return Collections.emptyList();
         }
 
-        return itemRepository.search(text)
-                .stream()
-                .map(itemMapper::toItemDto)
-                .collect(Collectors.toList());
+        return itemRepository.search(text);
     }
 
     /**
      * Создание отзыва
      */
     @Override
-    public CommentDto createComment(long userId, long itemId, CommentDto commentDto)
+    public Comment createComment(long userId, long itemId, Comment comment)
             throws ObjectNotFountException, ValidationException {
-        User user = userMapper.toUser(userService.getUserById(userId));
-        Item item = itemMapper.toItem(getItemById(userId, itemId));
+        User user = userService.getUserById(userId);
+        Item item = getItemById(userId, itemId);
 
         bookingRepository.findFirstByBookerIdAndItemIdAndStatusAndStartBefore(userId, itemId, BookingStatus.APPROVED,
                         LocalDateTime.now())
@@ -166,13 +152,12 @@ public class ItemServiceImpl implements ItemService {
                         "GetBookingById"
                 ));
 
-        Comment commentCreated = commentMapper.toComment(commentDto);
-        commentCreated.setAuthor(user);
-        commentCreated.setItem(item);
-        commentCreated.setCreated(LocalDateTime.now());
+        comment.setAuthor(user);
+        comment.setItem(item);
+        comment.setCreated(LocalDateTime.now());
 
-        log.info("CreateComment. Создан отзыв с id {}", commentCreated.getId());
-        return commentMapper.toCommentDto(commentRepository.save(commentCreated));
+        log.info("CreateComment. Создан отзыв с id {}", comment.getId());
+        return commentRepository.save(comment);
     }
 
     /**
@@ -188,41 +173,29 @@ public class ItemServiceImpl implements ItemService {
         }
     }
 
-    private ItemDto setBookings(ItemDto itemDto) {
-        Optional<ItemDto.Booking> last = getLastBookingForItem(itemDto.getOwner().getId());
-        Optional<ItemDto.Booking> next = getNextBookingForItem(itemDto.getOwner().getId());
+    private Item setBookings(Item item) {
+        Optional<Booking> last = getLastBookingForItem(item.getOwner().getId());
+        Optional<Booking> next = getNextBookingForItem(item.getOwner().getId());
 
-        itemDto.setLastBooking(last.orElse(null));
-        itemDto.setNextBooking(next.orElse(null));
+        item.setLastBooking(last.orElse(null));
+        item.setNextBooking(next.orElse(null));
 
-        return itemDto;
+        return item;
     }
 
     /**
      * Получедние последнего бронирования для вещи
      */
-    private Optional<ItemDto.Booking> getLastBookingForItem(long userId) {
-        Optional<Booking> last = bookingRepository.findFirstByItemOwnerIdAndStatusOrderByEnd(userId,
+    private Optional<Booking> getLastBookingForItem(long userId) {
+        return bookingRepository.findFirstByItemOwnerIdAndStatusOrderByEnd(userId,
                 BookingStatus.APPROVED);
-
-        if (last.isEmpty()) {
-            return Optional.empty();
-        }
-
-        return Optional.of(itemMapper.toItemBookingDto(last.get()));
     }
 
     /**
      * Получедние ближайшего слудующего бронирования для вещи
      */
-    private Optional<ItemDto.Booking> getNextBookingForItem(long userId) {
-        Optional<Booking> next = bookingRepository.findFirstByItemOwnerIdAndStatusOrderByEndDesc(userId,
+    private Optional<Booking> getNextBookingForItem(long userId) {
+        return bookingRepository.findFirstByItemOwnerIdAndStatusOrderByEndDesc(userId,
                 BookingStatus.APPROVED);
-
-        if (next.isEmpty()) {
-            return Optional.empty();
-        }
-
-        return Optional.of(itemMapper.toItemBookingDto(next.get()));
     }
 }

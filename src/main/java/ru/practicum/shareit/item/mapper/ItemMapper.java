@@ -7,6 +7,7 @@ import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
 
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -24,8 +25,8 @@ public class ItemMapper {
                 item.getDescription(),
                 item.getAvailable(),
                 toUserItem(item.getOwner()),
-                null,
-                null,
+                Optional.ofNullable(item.getLastBooking()).map(this::toBookingItem).orElse(null),
+                Optional.ofNullable(item.getNextBooking()).map(this::toBookingItem).orElse(null),
                 item.getComments().stream().map(this::toCommentItem).collect(Collectors.toList())
         );
     }
@@ -39,21 +40,11 @@ public class ItemMapper {
                 itemDto.getName(),
                 itemDto.getDescription(),
                 itemDto.getAvailable(),
-                toUser(itemDto.getOwner()),
+                Optional.ofNullable(itemDto.getOwner()).map(this::toUser).orElse(null),
                 null,
+                Optional.ofNullable(itemDto.getLastBooking()).map(this::toBooking).orElse(null),
+                Optional.ofNullable(itemDto.getNextBooking()).map(this::toBooking).orElse(null),
                 itemDto.getComments().stream().map(this::toComment).collect(Collectors.toList())
-        );
-    }
-
-    /**
-     * Преобразование DTO бронирования DTO в вещи
-     */
-    public ItemDto.Booking toItemBookingDto(Booking booking) {
-        return new ItemDto.Booking(
-                booking.getId(),
-                booking.getBooker().getId(),
-                booking.getStart(),
-                booking.getEnd()
         );
     }
 
@@ -70,6 +61,26 @@ public class ItemMapper {
                 itemUser.getId(),
                 itemUser.getName(),
                 itemUser.getEmail()
+        );
+    }
+
+    private ItemDto.Booking toBookingItem(Booking booking) {
+        return new ItemDto.Booking(
+                booking.getId(),
+                booking.getBooker().getId(),
+                booking.getStart(),
+                booking.getEnd()
+        );
+    }
+
+    private Booking toBooking(ItemDto.Booking itemBooking) {
+        return new Booking(
+                itemBooking.getId(),
+                itemBooking.getStart(),
+                itemBooking.getEnd(),
+                null,
+                new User(itemBooking.getBookerId(), null, null),
+                null
         );
     }
 
