@@ -1,7 +1,8 @@
 package ru.practicum.shareit.booking.mapper;
 
 import org.springframework.stereotype.Component;
-import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.booking.dto.CreatedBookingDto;
+import ru.practicum.shareit.booking.dto.GottenBookingDto;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
@@ -14,64 +15,91 @@ public class BookingMapper {
     /**
      * Преобразование модели в DTO
      */
-    public BookingDto toBookingDto(Booking booking) {
-        return BookingDto.builder()
-                .id(booking.getId())
-                .start(booking.getStart())
-                .end(booking.getEnd())
-                .item(toBookingItem(booking.getItem()))
-                .booker(toUserBooking(booking.getBooker()))
-                .status(booking.getStatus())
-                .build();
+    public CreatedBookingDto toCreatedBookingDto(Booking booking) {
+        return new CreatedBookingDto(
+                booking.getId(),
+                booking.getStart(),
+                booking.getEnd(),
+                booking.getItem().getId()
+        );
+    }
+
+    /**
+     * Преобразование модели в DTO
+     */
+    public GottenBookingDto toGottenBookingDto(Booking booking) {
+        return new GottenBookingDto(
+                booking.getId(),
+                booking.getStart(),
+                booking.getEnd(),
+                toGottenBookingDtoBookingItem(booking.getItem()),
+                toUserGottenBookingDtoBooking(booking.getBooker()),
+                booking.getStatus()
+        );
     }
 
     /**
      * Преобразование DTO в модель
      */
-    public Booking toBooking(BookingDto bookingDto) {
-        return Booking.builder()
-                .id(bookingDto.getId())
-                .start(bookingDto.getStart())
-                .end(bookingDto.getEnd())
-                .item(toItem(bookingDto.getItem()))
-                .booker(toUser(bookingDto.getBooker()))
-                .status(bookingDto.getStatus())
-                .build();
+    public Booking toBooking(CreatedBookingDto bookingDto) {
+        return new Booking(
+                bookingDto.getId(),
+                bookingDto.getStart(),
+                bookingDto.getEnd(),
+                new Item(bookingDto.getItemId(), null, null, null, null, null, null),
+                null,
+                null
+        );
     }
 
-    private BookingDto.Item toBookingItem(Item item) {
-        return BookingDto.Item.builder()
-                .id(item.getId())
-                .name(item.getName())
-                .description(item.getDescription())
-                .available(item.getAvailable())
-                .request(item.getRequest())
-                .build();
+    /**
+     * Преобразование DTO в модель
+     */
+    public Booking toBooking(GottenBookingDto bookingDto) {
+        return new Booking(
+                bookingDto.getId(),
+                bookingDto.getStart(),
+                bookingDto.getEnd(),
+                toItem(bookingDto.getItem()),
+                toUser(bookingDto.getBooker()),
+                bookingDto.getStatus()
+        );
     }
 
-    private Item toItem(BookingDto.Item bookingItem) {
-        return Item.builder()
-                .id(bookingItem.getId())
-                .name(bookingItem.getName())
-                .description(bookingItem.getDescription())
-                .available(bookingItem.isAvailable())
-                .request(bookingItem.getRequest())
-                .build();
+    private GottenBookingDto.Item toGottenBookingDtoBookingItem(Item item) {
+        return new GottenBookingDto.Item(
+                item.getId(),
+                item.getName(),
+                item.getDescription(),
+                item.getAvailable()
+        );
     }
 
-    private BookingDto.User toUserBooking(User user) {
-        return BookingDto.User.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .build();
+    private Item toItem(GottenBookingDto.Item bookingItem) {
+        return new Item(
+                bookingItem.getId(),
+                bookingItem.getName(),
+                bookingItem.getDescription(),
+                bookingItem.isAvailable(),
+                null,
+                null,
+                null
+        );
     }
 
-    private User toUser(BookingDto.User bookingUser) {
-        return User.builder()
-                .id(bookingUser.getId())
-                .name(bookingUser.getName())
-                .email(bookingUser.getEmail())
-                .build();
+    private GottenBookingDto.User toUserGottenBookingDtoBooking(User user) {
+        return new GottenBookingDto.User(
+                user.getId(),
+                user.getName(),
+                user.getEmail()
+        );
+    }
+
+    private User toUser(GottenBookingDto.User bookingUser) {
+        return new User(
+                bookingUser.getId(),
+                bookingUser.getName(),
+                bookingUser.getEmail()
+        );
     }
 }

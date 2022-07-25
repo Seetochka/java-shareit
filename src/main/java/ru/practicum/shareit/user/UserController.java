@@ -2,9 +2,7 @@ package ru.practicum.shareit.user;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.exception.DuplicateEmailException;
 import ru.practicum.shareit.exception.ObjectNotFountException;
-import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.user.dto.UserDto;
 
 import javax.validation.Valid;
@@ -20,12 +18,12 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    public UserDto createUser(@Valid @RequestBody UserDto userDto) throws DuplicateEmailException, ValidationException {
+    public UserDto createUser(@Valid @RequestBody UserDto userDto) {
         return userService.createUser(userDto);
     }
 
     @GetMapping("/{userId}")
-    public UserDto getUserById(@PathVariable int userId) throws ObjectNotFountException {
+    public UserDto getUserById(@PathVariable long userId) throws ObjectNotFountException {
         return userService.getUserById(userId);
     }
 
@@ -35,13 +33,13 @@ public class UserController {
     }
 
     @PatchMapping("/{userId}")
-    public UserDto updateUser(@PathVariable int userId, @Valid @RequestBody UserDto userDto)
-            throws ObjectNotFountException, ValidationException, DuplicateEmailException {
+    public UserDto updateUser(@PathVariable long userId, @RequestBody UserDto userDto)
+            throws ObjectNotFountException {
         return userService.updateUser(userId, userDto);
     }
 
     @DeleteMapping("/{userId}")
-    public int deleteUser(@PathVariable int userId) throws ObjectNotFountException {
-        return userService.deleteUser(userId);
+    public void deleteUser(@PathVariable long userId) throws ObjectNotFountException {
+        userService.deleteUser(userId);
     }
 }

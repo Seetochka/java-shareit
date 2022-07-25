@@ -1,58 +1,21 @@
 package ru.practicum.shareit.item.repository;
 
-import ru.practicum.shareit.exception.ObjectNotFountException;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.user.model.User;
 
 import java.util.Collection;
-import java.util.Map;
+import java.util.List;
 
 /**
  * Интерфейс репозитория вещи
  */
-public interface ItemRepository {
-    /**
-     * Создание вещи
-     */
-    Item createItem(int userId, Item item, User user);
+public interface ItemRepository extends JpaRepository<Item, Long> {
+    Collection<Item> findAllByOwnerId(Long userId);
 
-    /**
-     * Получение вещи по id
-     */
-    Item getItemById(int itemId);
-
-    /**
-     * Получение всех вещей пользователя
-     */
-    Collection<Item> getAllByUserId(int userId);
-
-    /**
-     * Получение всех вещей
-     */
-    Map<Integer, Item> getAll();
-
-    /**
-     * Обновление данных вещи
-     */
-    Item updateItem(int itemId, Item item);
-
-    /**
-     * Удаление вещи
-     */
-    int deleteItem(int itemId);
-
-    /**
-     * Поиск вещей по тексту
-     */
-    Collection<Item> searchItemByText(String text);
-
-    /**
-     * Проверяет владельца вещи
-     */
-    boolean checkOwner(int userId, int itemId);
-
-    /**
-     * Проверяет существование вещи
-     */
-    void checkItemId(int itemId) throws ObjectNotFountException;
+    @Query("select i from Item i" +
+            " where upper(i.name) like upper(concat('%', ?1, '%'))" +
+            " or upper(i.description) like upper(concat('%', ?1, '%'))" +
+            " and i.available is true")
+    List<Item> search(String text);
 }

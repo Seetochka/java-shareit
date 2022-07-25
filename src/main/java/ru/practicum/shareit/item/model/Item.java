@@ -1,19 +1,37 @@
 package ru.practicum.shareit.item.model;
 
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.model.User;
+
+import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * Класс вещи, которую могут брать в аренду
  */
+@Entity
 @Data
-@Builder
+@Table(name = "items")
+@AllArgsConstructor
+@NoArgsConstructor
 public class Item {
-    private Integer id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     private String name;
     private String description;
     private Boolean available;
+    @ManyToOne()
+    @JoinColumn(name = "owner_id")
     private User owner;
-    private String request;
+    @OneToOne()
+    @JoinColumn(name = "request_id")
+    private ItemRequest request;
+    @OneToMany()
+    @JoinColumn(name = "item_id")
+    Collection<Comment> comments = new ArrayList<>();
 }

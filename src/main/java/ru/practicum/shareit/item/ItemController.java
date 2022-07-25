@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.exception.ObjectNotFountException;
 import ru.practicum.shareit.exception.ValidationException;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 
 import javax.validation.Valid;
@@ -20,35 +21,44 @@ public class ItemController {
     private final ItemService itemService;
 
     @PostMapping
-    public ItemDto createItem(@RequestHeader(HEADER_USER_ID) int userId, @Valid @RequestBody ItemDto itemDto)
+    public ItemDto createItem(@RequestHeader(HEADER_USER_ID) long userId, @Valid @RequestBody ItemDto itemDto)
             throws ObjectNotFountException, ValidationException {
         return itemService.createItem(userId, itemDto);
     }
 
     @GetMapping("/{itemId}")
-    public ItemDto getItemById(@PathVariable int itemId) throws ObjectNotFountException {
-        return itemService.getItemById(itemId);
+    public ItemDto getItemById(@RequestHeader(HEADER_USER_ID) long userId, @PathVariable long itemId)
+            throws ObjectNotFountException {
+        return itemService.getItemById(userId, itemId);
     }
 
     @GetMapping
-    public Collection<ItemDto> getAll(@RequestHeader(HEADER_USER_ID) int userId) throws ObjectNotFountException {
+    public Collection<ItemDto> getAllByUserId(@RequestHeader(HEADER_USER_ID) long userId)
+            throws ObjectNotFountException {
         return itemService.getAllByUserId(userId);
     }
 
     @PatchMapping("/{itemId}")
-    public ItemDto updateItem(@RequestHeader(HEADER_USER_ID) int userId, @PathVariable int itemId,
-                              @Valid @RequestBody ItemDto itemDto) throws ObjectNotFountException {
+    public ItemDto updateItem(@RequestHeader(HEADER_USER_ID) long userId, @PathVariable long itemId,
+                              @RequestBody ItemDto itemDto) throws ObjectNotFountException {
         return itemService.updateItem(userId, itemId, itemDto);
     }
 
     @DeleteMapping("/{itemId}")
-    public int deleteItem(@RequestHeader(HEADER_USER_ID) int userId, @PathVariable int itemId)
+    public void deleteItem(@RequestHeader(HEADER_USER_ID) long userId, @PathVariable long itemId)
             throws ObjectNotFountException {
-        return itemService.deleteItem(userId, itemId);
+        itemService.deleteItem(userId, itemId);
     }
 
     @GetMapping("/search")
     public Collection<ItemDto> searchItemByText(@RequestParam String text) {
         return itemService.searchItemByText(text);
+    }
+
+    @PostMapping("/{itemId}/comment")
+    public CommentDto createComment(@RequestHeader(HEADER_USER_ID) long userId, @PathVariable long itemId,
+                                    @Valid @RequestBody CommentDto commentDto)
+            throws ObjectNotFountException, ValidationException {
+        return itemService.createComment(userId, itemId, commentDto);
     }
 }

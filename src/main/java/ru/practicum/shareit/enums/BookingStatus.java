@@ -3,8 +3,9 @@ package ru.practicum.shareit.enums;
 /**
  * Перечесление статусов бронирования
  */
-public enum Status {
+public enum BookingStatus {
     WAITING,
+    APPROVED,
     REJECTED,
     CANCELED
 }

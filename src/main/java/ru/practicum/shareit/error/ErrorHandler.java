@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.practicum.shareit.exception.DuplicateEmailException;
 import ru.practicum.shareit.exception.ObjectNotFountException;
+import ru.practicum.shareit.exception.UserHaveNoRightsException;
 import ru.practicum.shareit.exception.ValidationException;
 
 /**
@@ -48,10 +49,10 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ErrorResponse handleThrowable(final Throwable e) {
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleUserHaveNoRightsException(final UserHaveNoRightsException e) {
         return new ErrorResponse(
-                "Произошла непредвиденная ошибка"
+                e.getMessage()
         );
     }
 }
