@@ -1,9 +1,7 @@
 package ru.practicum.shareit.user;
 
-import ru.practicum.shareit.exception.DuplicateEmailException;
 import ru.practicum.shareit.exception.ObjectNotFountException;
-import ru.practicum.shareit.exception.ValidationException;
-import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.model.User;
 
 import java.util.Collection;
 
@@ -14,31 +12,30 @@ public interface UserService {
     /**
      * Создание пользователя
      */
-    UserDto createUser(UserDto userDto) throws DuplicateEmailException, ValidationException;
+    User createUser(User user);
 
     /**
      * Получение пользователя по id
      */
-    UserDto getUserById(int userId) throws ObjectNotFountException;
+    User getUserById(long userId) throws ObjectNotFountException;
 
     /**
      * Получение всех пользователей
      */
-    Collection<UserDto> getAll();
+    Collection<User> getAll();
 
     /**
      * Обновление пользователя
      */
-    UserDto updateUser(int userId, UserDto userDto)
-            throws ObjectNotFountException, ValidationException, DuplicateEmailException;
+    User updateUser(long userId, User user) throws ObjectNotFountException;
 
     /**
      * Удаление пользователя
      */
-    int deleteUser(int userId) throws ObjectNotFountException;
+    void deleteUser(long userId) throws ObjectNotFountException;
 
     /**
      * Проверка существования пользователя по id
      */
-    void checkUserId(int userId) throws ObjectNotFountException;
+    void checkUserExistsById(long userId) throws ObjectNotFountException;
 }

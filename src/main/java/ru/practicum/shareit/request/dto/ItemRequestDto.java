@@ -1,7 +1,8 @@
 package ru.practicum.shareit.request.dto;
 
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -9,17 +10,19 @@ import java.time.LocalDateTime;
  * DTO запроса вещи
  */
 @Data
-@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class ItemRequestDto {
-    private Integer id;
+    private Long id;
     private String description;
     private User requestor;
     private LocalDateTime created;
 
     @Data
-    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class User {
-        private Integer id;
+        private Long id;
         private String name;
         private String email;
     }

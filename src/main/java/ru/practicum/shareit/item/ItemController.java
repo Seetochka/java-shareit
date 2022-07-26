@@ -4,10 +4,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.exception.ObjectNotFountException;
 import ru.practicum.shareit.exception.ValidationException;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.mapper.CommentMapper;
+import ru.practicum.shareit.item.mapper.ItemMapper;
+import ru.practicum.shareit.item.model.Comment;
+import ru.practicum.shareit.item.model.Item;
 
 import javax.validation.Valid;
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 /**
  * Контроллер отвечающий за действия с вещами
@@ -18,37 +24,60 @@ import java.util.Collection;
 public class ItemController {
     private static final String HEADER_USER_ID = "X-Sharer-User-Id";
     private final ItemService itemService;
+    private final ItemMapper itemMapper;
+    private final CommentMapper commentMapper;
 
     @PostMapping
-    public ItemDto createItem(@RequestHeader(HEADER_USER_ID) int userId, @Valid @RequestBody ItemDto itemDto)
+    public ItemDto createItem(@RequestHeader(HEADER_USER_ID) long userId, @Valid @RequestBody ItemDto itemDto)
             throws ObjectNotFountException, ValidationException {
-        return itemService.createItem(userId, itemDto);
+        Item item = itemService.createItem(userId, itemMapper.toItem(itemDto));
+
+        return itemMapper.toItemDto(item);
     }
 
     @GetMapping("/{itemId}")
-    public ItemDto getItemById(@PathVariable int itemId) throws ObjectNotFountException {
-        return itemService.getItemById(itemId);
+    public ItemDto getItemById(@RequestHeader(HEADER_USER_ID) long userId, @PathVariable long itemId)
+            throws ObjectNotFountException {
+        return itemMapper.toItemDto((itemService.getItemById(userId, itemId)));
     }
 
     @GetMapping
-    public Collection<ItemDto> getAll(@RequestHeader(HEADER_USER_ID) int userId) throws ObjectNotFountException {
-        return itemService.getAllByUserId(userId);
+    public Collection<ItemDto> getAllByUserId(@RequestHeader(HEADER_USER_ID) long userId)
+            throws ObjectNotFountException {
+        return itemService.getAllByUserId(userId)
+                .stream()
+                .map(itemMapper::toItemDto)
+                .collect(Collectors.toList());
     }
 
     @PatchMapping("/{itemId}")
-    public ItemDto updateItem(@RequestHeader(HEADER_USER_ID) int userId, @PathVariable int itemId,
-                              @Valid @RequestBody ItemDto itemDto) throws ObjectNotFountException {
-        return itemService.updateItem(userId, itemId, itemDto);
+    public ItemDto updateItem(@RequestHeader(HEADER_USER_ID) long userId, @PathVariable long itemId,
+                              @RequestBody ItemDto itemDto) throws ObjectNotFountException {
+        Item item = itemService.updateItem(userId, itemId, itemMapper.toItem(itemDto));
+
+        return itemMapper.toItemDto(item);
     }
 
     @DeleteMapping("/{itemId}")
-    public int deleteItem(@RequestHeader(HEADER_USER_ID) int userId, @PathVariable int itemId)
+    public void deleteItem(@RequestHeader(HEADER_USER_ID) long userId, @PathVariable long itemId)
             throws ObjectNotFountException {
-        return itemService.deleteItem(userId, itemId);
+        itemService.deleteItem(userId, itemId);
     }
 
     @GetMapping("/search")
     public Collection<ItemDto> searchItemByText(@RequestParam String text) {
-        return itemService.searchItemByText(text);
+        return itemService.searchItemByText(text)
+                .stream()
+                .map(itemMapper::toItemDto)
+                .collect(Collectors.toList());
+    }
+
+    @PostMapping("/{itemId}/comment")
+    public CommentDto createComment(@RequestHeader(HEADER_USER_ID) long userId, @PathVariable long itemId,
+                                    @Valid @RequestBody CommentDto commentDto)
+            throws ObjectNotFountException, ValidationException {
+        Comment comment = itemService.createComment(userId, itemId, commentMapper.toComment(commentDto));
+
+        return commentMapper.toCommentDto(comment);
     }
 }

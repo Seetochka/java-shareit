@@ -4,18 +4,22 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.booking.repository.BookingRepository;
+import ru.practicum.shareit.enums.BookingStatus;
 import ru.practicum.shareit.exception.ObjectNotFountException;
 import ru.practicum.shareit.exception.ValidationException;
-import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.mapper.ItemMapper;
+import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.user.UserService;
-import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.mapper.UserMapper;
+import ru.practicum.shareit.user.model.User;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -23,59 +27,67 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ItemServiceImpl implements ItemService {
     private final UserService userService;
-    private final UserMapper userMapper;
 
+    private final BookingRepository bookingRepository;
     private final ItemRepository itemRepository;
-    private final ItemMapper itemMapper;
+    private final CommentRepository commentRepository;
 
     /**
      * Создание вещи
      */
     @Override
-    public ItemDto createItem(int userId, ItemDto itemDto) throws ObjectNotFountException, ValidationException {
-        userService.checkUserId(userId);
+    public Item createItem(long userId, Item item) throws ObjectNotFountException, ValidationException {
+        User user = userService.getUserById(userId);
 
-        if (!StringUtils.hasText(itemDto.getName())) {
+        if (!StringUtils.hasText(item.getName())) {
             throw new ValidationException("Не заполнено поле name", "CreateItem");
         }
 
-        if (itemDto.getDescription() == null) {
+        if (item.getDescription() == null) {
             throw new ValidationException("Не заполнено поле description", "CreateItem");
         }
 
-        if (itemDto.getAvailable() == null) {
+        if (item.getAvailable() == null) {
             throw new ValidationException("Не заполнено поле available", "CreateItem");
         }
 
-        UserDto userDto = userService.getUserById(userId);
+        item.setOwner(user);
 
-        Item item = itemRepository.createItem(userId, itemMapper.toItem(itemDto), userMapper.toUser(userDto));
+        Item itemCreated = itemRepository.save(item);
 
-        log.info("CreateItem. Создана вещь с id {}", item.getId());
-        return itemMapper.toItemDto(item);
+        log.info("CreateItem. Создана вещь с id {}", itemCreated.getId());
+        return itemCreated;
     }
 
     /**
      * Получение вещи по id
      */
     @Override
-    public ItemDto getItemById(int itemId) throws ObjectNotFountException {
-        itemRepository.checkItemId(itemId);
+    public Item getItemById(long userId, long itemId) throws ObjectNotFountException {
+        userService.checkUserExistsById(userId);
 
-        Item item = itemRepository.getItemById(itemId);
+        Item item = itemRepository.findById(itemId).orElseThrow(() -> new ObjectNotFountException(
+                String.format("Вещь с id %d не существует", itemId),
+                "getItemById"
+        ));
 
-        return itemMapper.toItemDto(item);
+        if (item.getOwner().getId() == userId) {
+            setBookings(item);
+        }
+
+        return item;
     }
 
     /**
      * Получение всех вещей пользователя
      */
     @Override
-    public Collection<ItemDto> getAllByUserId(int userId) throws ObjectNotFountException {
-        userService.checkUserId(userId);
+    public Collection<Item> getAllByUserId(long userId) throws ObjectNotFountException {
+        userService.checkUserExistsById(userId);
 
-        return itemRepository.getAllByUserId(userId).stream()
-                .map(itemMapper::toItemDto)
+        return itemRepository.findAllByOwnerId(userId)
+                .stream()
+                .map(this::setBookings)
                 .collect(Collectors.toList());
     }
 
@@ -83,47 +95,107 @@ public class ItemServiceImpl implements ItemService {
      * Обновление данных вещи
      */
     @Override
-    public ItemDto updateItem(int userId, int itemId, ItemDto itemDto)
-            throws ObjectNotFountException {
-        userService.checkUserId(userId);
-        itemRepository.checkItemId(itemId);
+    public Item updateItem(long userId, long itemId, Item item) throws ObjectNotFountException {
+        userService.checkUserExistsById(userId);
+        Item itemUpdated = getItemById(userId, itemId);
 
-        if (itemRepository.checkOwner(userId, itemId)) {
+        if (itemUpdated.getOwner().getId() != userId) {
             throw new ObjectNotFountException("Передан неверный владелец вещи", "UpdateItem");
         }
 
-        Item item = itemRepository.updateItem(itemId, itemMapper.toItem(itemDto));
+        Optional.ofNullable(item.getName()).ifPresent(itemUpdated::setName);
+        Optional.ofNullable(item.getDescription()).ifPresent(itemUpdated::setDescription);
+        Optional.ofNullable(item.getAvailable()).ifPresent(itemUpdated::setAvailable);
 
-        log.info("UpdateItem. Обновлены данные вещи с id {}", item.getId());
-        return itemMapper.toItemDto(item);
+        log.info("UpdateItem. Обновлены данные вещи с id {}", itemUpdated.getId());
+        return itemRepository.save(itemUpdated);
     }
 
     /**
      * Удаление вещи
      */
     @Override
-    public int deleteItem(int userId, int itemId) throws ObjectNotFountException {
-        userService.checkUserId(userId);
-        itemRepository.checkItemId(itemId);
+    public void deleteItem(long userId, long itemId) throws ObjectNotFountException {
+        userService.checkUserExistsById(userId);
+        checkItemExistsById(itemId);
 
-        int itemDeletedId = itemRepository.deleteItem(itemId);
+        itemRepository.deleteById(itemId);
 
-        log.info("DeleteItem. Удалена вещь с id {}", itemDeletedId);
-        return itemDeletedId;
+        log.info("DeleteItem. Удалена вещь с id {}", itemId);
     }
 
     /**
      * Поиск вещей по тексту
      */
     @Override
-    public Collection<ItemDto> searchItemByText(String text) {
+    public Collection<Item> searchItemByText(String text) {
         if (!StringUtils.hasText(text)) {
             return Collections.emptyList();
         }
 
-        return itemRepository.searchItemByText(text)
-                .stream()
-                .map(itemMapper::toItemDto)
-                .collect(Collectors.toList());
+        return itemRepository.search(text);
+    }
+
+    /**
+     * Создание отзыва
+     */
+    @Override
+    public Comment createComment(long userId, long itemId, Comment comment)
+            throws ObjectNotFountException, ValidationException {
+        User user = userService.getUserById(userId);
+        Item item = getItemById(userId, itemId);
+
+        bookingRepository.findFirstByBookerIdAndItemIdAndStatusAndStartBefore(userId, itemId, BookingStatus.APPROVED,
+                        LocalDateTime.now())
+                .orElseThrow(() -> new ValidationException(
+                        String.format("Пользователь с id %d не брал вещь с id %d в аренду", userId, itemId),
+                        "GetBookingById"
+                ));
+
+        comment.setAuthor(user);
+        comment.setItem(item);
+        comment.setCreated(LocalDateTime.now());
+
+        log.info("CreateComment. Создан отзыв с id {}", comment.getId());
+        return commentRepository.save(comment);
+    }
+
+    /**
+     * Проверка существования пользователя по id
+     */
+    @Override
+    public void checkItemExistsById(long itemId) throws ObjectNotFountException {
+        if (!itemRepository.existsById(itemId)) {
+            throw new ObjectNotFountException(
+                    String.format("Вещь с id %d не существует", itemId),
+                    "CheckItemExistsById"
+            );
+        }
+    }
+
+    private Item setBookings(Item item) {
+        Optional<Booking> last = getLastBookingForItem(item.getOwner().getId());
+        Optional<Booking> next = getNextBookingForItem(item.getOwner().getId());
+
+        item.setLastBooking(last.orElse(null));
+        item.setNextBooking(next.orElse(null));
+
+        return item;
+    }
+
+    /**
+     * Получедние последнего бронирования для вещи
+     */
+    private Optional<Booking> getLastBookingForItem(long userId) {
+        return bookingRepository.findFirstByItemOwnerIdAndStatusOrderByEnd(userId,
+                BookingStatus.APPROVED);
+    }
+
+    /**
+     * Получедние ближайшего слудующего бронирования для вещи
+     */
+    private Optional<Booking> getNextBookingForItem(long userId) {
+        return bookingRepository.findFirstByItemOwnerIdAndStatusOrderByEndDesc(userId,
+                BookingStatus.APPROVED);
     }
 }

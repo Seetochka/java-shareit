@@ -3,101 +3,84 @@ package ru.practicum.shareit.user;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-import ru.practicum.shareit.exception.DuplicateEmailException;
 import ru.practicum.shareit.exception.ObjectNotFountException;
-import ru.practicum.shareit.exception.ValidationException;
-import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Optional;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
-    private final UserMapper userMapper;
 
     /**
      * Создание пользователя
      */
     @Override
-    public UserDto createUser(UserDto userDto) throws DuplicateEmailException, ValidationException {
-        userRepository.checkEmail(userDto.getEmail());
-
-        User user = userRepository.createUser(userMapper.toUser(userDto));
+    public User createUser(User user) {
+        user = userRepository.save(user);
 
         log.info("CreateUser. Создан пользователь с id {}", user.getId());
-        return userMapper.toUserDto(user);
+        return user;
     }
 
     /**
      * Получение пользователя по id
      */
     @Override
-    public UserDto getUserById(int userId) throws ObjectNotFountException {
-        checkUserId(userId);
-
-        User user = userRepository.getUserById(userId);
-
-        return userMapper.toUserDto(user);
+    public User getUserById(long userId) throws ObjectNotFountException {
+        return userRepository.findById(userId).orElseThrow(() -> new ObjectNotFountException(
+                String.format("Пользователь с id %d не существует", userId),
+                "GetUserById")
+        );
     }
 
     /**
      * Получение всех пользователей
      */
-    public Collection<UserDto> getAll() {
-        Collection<User> users = userRepository.getAll().values();
-
-        Collection<UserDto> usersDto = new ArrayList<>();
-
-        for (User user : users) {
-            usersDto.add(userMapper.toUserDto(user));
-        }
-
-        return usersDto;
+    public Collection<User> getAll() {
+        return userRepository.findAll();
     }
 
     /**
      * Обновление пользователя
      */
     @Override
-    public UserDto updateUser(int userId, UserDto userDto)
-            throws ObjectNotFountException, ValidationException, DuplicateEmailException {
-        checkUserId(userId);
+    public User updateUser(long userId, User user) throws ObjectNotFountException {
+        User userUpdated = getUserById(userId);
 
-        if (StringUtils.hasText(userDto.getEmail())) {
-            userRepository.checkEmail(userDto.getEmail());
-        }
+        Optional.ofNullable(user.getEmail()).ifPresent(userUpdated::setEmail);
+        Optional.ofNullable(user.getName()).ifPresent(userUpdated::setName);
 
-        User user = userRepository.updateUser(userId, userMapper.toUser(userDto));
-
-        log.info("UpdateUser. Обновлены данные пользователя с id {}", user.getId());
-        return userMapper.toUserDto(user);
+        log.info("UpdateUser. Обновлены данные пользователя с id {}", userUpdated.getId());
+        return userRepository.save(userUpdated);
     }
 
     /**
      * Удаление пользователя
      */
     @Override
-    public int deleteUser(int userId) throws ObjectNotFountException {
-        checkUserId(userId);
+    public void deleteUser(long userId) throws ObjectNotFountException {
+        checkUserExistsById(userId);
 
-        int userDeletedId = userRepository.deleteUser(userId);
+        userRepository.deleteById(userId);
 
-        log.info("DeleteUser. Удален пользователь с id {}", userDeletedId);
-        return userDeletedId;
+        log.info("DeleteUser. Удален пользователь с id {}", userId);
     }
 
     /**
      * Проверка существования пользователя по id
      */
     @Override
-    public void checkUserId(int userId) throws ObjectNotFountException {
-        userRepository.checkUserId(userId);
+    public void checkUserExistsById(long userId) throws ObjectNotFountException {
+        if (!userRepository.existsById(userId)) {
+            throw new ObjectNotFountException(
+                    String.format("Пользователь с id %d не существует", userId),
+                    "CheckUserExistsById"
+            );
+        }
     }
 }
