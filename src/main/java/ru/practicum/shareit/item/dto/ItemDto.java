@@ -26,6 +26,7 @@ public class ItemDto {
     @NonNull
     private Boolean available;
     private User owner;
+    private Long requestId;
     private Booking lastBooking;
     private Booking nextBooking;
     Collection<Comment> comments = new ArrayList<>();

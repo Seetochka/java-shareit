@@ -6,8 +6,8 @@ import ru.practicum.shareit.booking.dto.CreatedBookingDto;
 import ru.practicum.shareit.booking.dto.GottenBookingDto;
 import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.enums.BookingState;
 import ru.practicum.shareit.exception.ObjectNotFountException;
+import ru.practicum.shareit.exception.UnsupportedStatusException;
 import ru.practicum.shareit.exception.UserHaveNoRightsException;
 import ru.practicum.shareit.exception.ValidationException;
 
@@ -51,9 +51,11 @@ public class BookingController {
 
     @GetMapping
     public Collection<GottenBookingDto> getAllByBookerId(@RequestHeader(HEADER_USER_ID) long userId,
-                                                         @RequestParam(defaultValue = "ALL") BookingState state)
-            throws ObjectNotFountException {
-        return bookingService.getAllByBookerId(userId, state)
+                                                         @RequestParam(defaultValue = "ALL") String state,
+                                                         @RequestParam(defaultValue = "0") int from,
+                                                         @RequestParam(defaultValue = "20") int size)
+            throws ObjectNotFountException, UnsupportedStatusException {
+        return bookingService.getAllByBookerId(userId, state, from, size)
                 .stream()
                 .map(bookingMapper::toGottenBookingDto)
                 .collect(Collectors.toList());
@@ -61,9 +63,11 @@ public class BookingController {
 
     @GetMapping("/owner")
     public Collection<GottenBookingDto> getAllByOwnerId(@RequestHeader(HEADER_USER_ID) long userId,
-                                                        @RequestParam(defaultValue = "ALL") BookingState state)
-            throws ObjectNotFountException {
-        return bookingService.getAllByOwnerId(userId, state)
+                                                        @RequestParam(defaultValue = "ALL") String state,
+                                                        @RequestParam(defaultValue = "0") int from,
+                                                        @RequestParam(defaultValue = "20") int size)
+            throws ObjectNotFountException, UnsupportedStatusException {
+        return bookingService.getAllByOwnerId(userId, state, from, size)
                 .stream()
                 .map(bookingMapper::toGottenBookingDto)
                 .collect(Collectors.toList());

@@ -42,9 +42,11 @@ public class ItemController {
     }
 
     @GetMapping
-    public Collection<ItemDto> getAllByUserId(@RequestHeader(HEADER_USER_ID) long userId)
+    public Collection<ItemDto> getAllByUserId(@RequestHeader(HEADER_USER_ID) long userId,
+                                              @RequestParam(defaultValue = "0") int from,
+                                              @RequestParam(defaultValue = "20") int size)
             throws ObjectNotFountException {
-        return itemService.getAllByUserId(userId)
+        return itemService.getAllByUserId(userId, from, size)
                 .stream()
                 .map(itemMapper::toItemDto)
                 .collect(Collectors.toList());
@@ -65,8 +67,10 @@ public class ItemController {
     }
 
     @GetMapping("/search")
-    public Collection<ItemDto> searchItemByText(@RequestParam String text) {
-        return itemService.searchItemByText(text)
+    public Collection<ItemDto> searchItemByText(@RequestParam String text,
+                                                @RequestParam(defaultValue = "0") int from,
+                                                @RequestParam(defaultValue = "20") int size) {
+        return itemService.searchItemByText(text, from, size)
                 .stream()
                 .map(itemMapper::toItemDto)
                 .collect(Collectors.toList());

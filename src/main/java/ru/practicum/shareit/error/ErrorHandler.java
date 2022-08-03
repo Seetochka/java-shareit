@@ -5,10 +5,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ru.practicum.shareit.exception.DuplicateEmailException;
-import ru.practicum.shareit.exception.ObjectNotFountException;
-import ru.practicum.shareit.exception.UserHaveNoRightsException;
-import ru.practicum.shareit.exception.ValidationException;
+import ru.practicum.shareit.exception.*;
 
 /**
  * Обработчик ошибок
@@ -20,15 +17,6 @@ public class ErrorHandler {
     public ErrorResponse handleValidationException(final ValidationException e) {
         return new ErrorResponse(
                 String.format("Ошибка валидации: %s", e.getMessage())
-
-        );
-    }
-
-    @ExceptionHandler
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse handleDuplicateEmailException(final DuplicateEmailException e) {
-        return new ErrorResponse(
-                e.getMessage()
         );
     }
 
@@ -53,6 +41,14 @@ public class ErrorHandler {
     public ErrorResponse handleUserHaveNoRightsException(final UserHaveNoRightsException e) {
         return new ErrorResponse(
                 e.getMessage()
+        );
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleUnsupportedStatusException(final UnsupportedStatusException e) {
+        return new ErrorResponse(
+                "Unknown state: UNSUPPORTED_STATUS"
         );
     }
 }

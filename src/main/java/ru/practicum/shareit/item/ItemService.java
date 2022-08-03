@@ -24,7 +24,7 @@ public interface ItemService {
     /**
      * Получение всех вещей пользователя
      */
-    Collection<Item> getAllByUserId(long userId) throws ObjectNotFountException;
+    Collection<Item> getAllByUserId(long userId, int from, int size) throws ObjectNotFountException;
 
     /**
      * Обновление данных вещи
@@ -39,7 +39,7 @@ public interface ItemService {
     /**
      * Поиск вещей по тексту
      */
-    Collection<Item> searchItemByText(String text);
+    Collection<Item> searchItemByText(String text, int from, int size);
 
     /**
      * Создание отзыва

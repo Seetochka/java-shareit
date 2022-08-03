@@ -2,6 +2,9 @@ package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import ru.practicum.shareit.booking.model.Booking;
@@ -13,6 +16,7 @@ import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.request.ItemRequestService;
 import ru.practicum.shareit.user.UserService;
 import ru.practicum.shareit.user.model.User;
 
@@ -27,6 +31,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ItemServiceImpl implements ItemService {
     private final UserService userService;
+    private final ItemRequestService itemRequestService;
 
     private final BookingRepository bookingRepository;
     private final ItemRepository itemRepository;
@@ -42,13 +47,14 @@ public class ItemServiceImpl implements ItemService {
         if (!StringUtils.hasText(item.getName())) {
             throw new ValidationException("Не заполнено поле name", "CreateItem");
         }
-
         if (item.getDescription() == null) {
             throw new ValidationException("Не заполнено поле description", "CreateItem");
         }
-
         if (item.getAvailable() == null) {
             throw new ValidationException("Не заполнено поле available", "CreateItem");
+        }
+        if (item.getRequest() != null) {
+            itemRequestService.checkItemRequestExistsById(item.getRequest().getId());
         }
 
         item.setOwner(user);
@@ -82,10 +88,13 @@ public class ItemServiceImpl implements ItemService {
      * Получение всех вещей пользователя
      */
     @Override
-    public Collection<Item> getAllByUserId(long userId) throws ObjectNotFountException {
+    public Collection<Item> getAllByUserId(long userId, int from, int size) throws ObjectNotFountException {
         userService.checkUserExistsById(userId);
 
-        return itemRepository.findAllByOwnerId(userId)
+        Sort sortById = Sort.by(Sort.Direction.ASC, "id");
+        Pageable page = PageRequest.of((from / size), size, sortById);
+
+        return itemRepository.findAllByOwnerId(userId, page)
                 .stream()
                 .map(this::setBookings)
                 .collect(Collectors.toList());
@@ -128,12 +137,15 @@ public class ItemServiceImpl implements ItemService {
      * Поиск вещей по тексту
      */
     @Override
-    public Collection<Item> searchItemByText(String text) {
+    public Collection<Item> searchItemByText(String text, int from, int size) {
         if (!StringUtils.hasText(text)) {
             return Collections.emptyList();
         }
 
-        return itemRepository.search(text);
+        Sort sortById = Sort.by(Sort.Direction.ASC, "id");
+        Pageable page = PageRequest.of((from / size), size, sortById);
+
+        return itemRepository.search(text, page);
     }
 
     /**
@@ -174,8 +186,8 @@ public class ItemServiceImpl implements ItemService {
     }
 
     private Item setBookings(Item item) {
-        Optional<Booking> last = getLastBookingForItem(item.getOwner().getId());
-        Optional<Booking> next = getNextBookingForItem(item.getOwner().getId());
+        Optional<Booking> last = getLastBookingForItem(item.getId());
+        Optional<Booking> next = getNextBookingForItem(item.getId());
 
         item.setLastBooking(last.orElse(null));
         item.setNextBooking(next.orElse(null));
@@ -186,16 +198,16 @@ public class ItemServiceImpl implements ItemService {
     /**
      * Получедние последнего бронирования для вещи
      */
-    private Optional<Booking> getLastBookingForItem(long userId) {
-        return bookingRepository.findFirstByItemOwnerIdAndStatusOrderByEnd(userId,
+    private Optional<Booking> getLastBookingForItem(long itemId) {
+        return bookingRepository.findFirstByItemIdAndStatusOrderByEnd(itemId,
                 BookingStatus.APPROVED);
     }
 
     /**
      * Получедние ближайшего слудующего бронирования для вещи
      */
-    private Optional<Booking> getNextBookingForItem(long userId) {
-        return bookingRepository.findFirstByItemOwnerIdAndStatusOrderByEndDesc(userId,
+    private Optional<Booking> getNextBookingForItem(long itemId) {
+        return bookingRepository.findFirstByItemIdAndStatusOrderByEndDesc(itemId,
                 BookingStatus.APPROVED);
     }
 }

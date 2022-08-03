@@ -61,7 +61,12 @@
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 		</dependency>
-	</dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
 	<build>
 		<resources>
@@ -197,8 +202,8 @@
 							</configuration>
 						</execution>
 						<execution>
-							<id>jacoco-site</id>
-							<phase>install</phase>
+							<id>jacoco-report</id>
+							<phase>test</phase>
 							<goals>
 								<goal>report</goal>
 							</goals>
