@@ -2,19 +2,19 @@ package ru.practicum.shareit.booking;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.repository.BookingRepository;
+import ru.practicum.shareit.enums.BookingState;
 import ru.practicum.shareit.enums.BookingStatus;
 import ru.practicum.shareit.exception.ObjectNotFountException;
-import ru.practicum.shareit.exception.UnsupportedStatusException;
 import ru.practicum.shareit.exception.UserHaveNoRightsException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.ItemService;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.trait.PageTrait;
 import ru.practicum.shareit.user.UserService;
 import ru.practicum.shareit.user.model.User;
 
@@ -24,7 +24,7 @@ import java.util.Collection;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class BookingServiceImpl implements BookingService {
+public class BookingServiceImpl implements BookingService, PageTrait {
     private final UserService userService;
     private final ItemService itemService;
 
@@ -117,38 +117,34 @@ public class BookingServiceImpl implements BookingService {
      * Получение всех бронирований текущего пользователя
      */
     @Override
-    public Collection<Booking> getAllByBookerId(long userId, String state, int from, int size)
-            throws ObjectNotFountException, UnsupportedStatusException {
+    public Collection<Booking> getAllByBookerId(long userId, BookingState state, int from, int size)
+            throws ObjectNotFountException {
         userService.checkUserExistsById(userId);
 
-        Sort sortById = Sort.by(Sort.Direction.DESC, "start");
-        Pageable page = PageRequest.of((from / size), size, sortById);
+        Pageable page = getPage(from, size, "start", Sort.Direction.DESC);
 
-        Collection<Booking> result;
+        Collection<Booking> result = null;
 
         switch (state) {
-            case "ALL":
+            case ALL:
                 result = bookingRepository.findAllByBookerId(userId, page);
                 break;
-            case "CURRENT":
+            case CURRENT:
                 result = bookingRepository.findAllByBookerIdAndEndIsAfterAndStartIsBefore(userId, LocalDateTime.now(),
                         LocalDateTime.now(), page);
                 break;
-            case "PAST":
+            case PAST:
                 result = bookingRepository.findAllByBookerIdAndEndIsBefore(userId, LocalDateTime.now(), page);
                 break;
-            case "FUTURE":
+            case FUTURE:
                 result = bookingRepository.findAllByBookerIdAndStartIsAfter(userId, LocalDateTime.now(), page);
                 break;
-            case "WAITING":
+            case WAITING:
                 result = bookingRepository.findAllByBookerIdAndStatus(userId, BookingStatus.WAITING, page);
                 break;
-            case "REJECTED":
+            case REJECTED:
                 result = bookingRepository.findAllByBookerIdAndStatus(userId, BookingStatus.REJECTED, page);
                 break;
-            default:
-                throw new UnsupportedStatusException(String.format("Получен неподдерживаемый статус %s", state),
-                        "GetAllByBookerId");
         }
 
         return result;
@@ -158,38 +154,34 @@ public class BookingServiceImpl implements BookingService {
      * Получение бронирований для всех вещей текущего пользователя
      */
     @Override
-    public Collection<Booking> getAllByOwnerId(long userId, String state, int from, int size)
-            throws ObjectNotFountException, UnsupportedStatusException {
+    public Collection<Booking> getAllByOwnerId(long userId, BookingState state, int from, int size)
+            throws ObjectNotFountException {
         userService.checkUserExistsById(userId);
 
-        Sort sortById = Sort.by(Sort.Direction.DESC, "start");
-        Pageable page = PageRequest.of((from / size), size, sortById);
+        Pageable page = getPage(from, size, "start", Sort.Direction.DESC);
 
-        Collection<Booking> result;
+        Collection<Booking> result = null;
 
         switch (state) {
-            case "ALL":
+            case ALL:
                 result = bookingRepository.findAllByItemOwnerId(userId, page);
                 break;
-            case "CURRENT":
+            case CURRENT:
                 result = bookingRepository.findAllByItemOwnerIdAndEndIsAfterAndStartIsBefore(userId, LocalDateTime.now(),
                         LocalDateTime.now(), page);
                 break;
-            case "PAST":
+            case PAST:
                 result = bookingRepository.findAllByItemOwnerIdAndEndIsBefore(userId, LocalDateTime.now(), page);
                 break;
-            case "FUTURE":
+            case FUTURE:
                 result = bookingRepository.findAllByItemOwnerIdAndStartIsAfter(userId, LocalDateTime.now(), page);
                 break;
-            case "WAITING":
+            case WAITING:
                 result = bookingRepository.findAllByItemOwnerIdAndStatus(userId, BookingStatus.WAITING, page);
                 break;
-            case "REJECTED":
+            case REJECTED:
                 result = bookingRepository.findAllByItemOwnerIdAndStatus(userId, BookingStatus.REJECTED, page);
                 break;
-            default:
-                throw new UnsupportedStatusException(String.format("Получен неподдерживаемый статус %s", state),
-                        "GetAllByOwnerId");
         }
 
         return result;

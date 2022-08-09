@@ -2,7 +2,6 @@ package ru.practicum.shareit.request;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -11,6 +10,7 @@ import ru.practicum.shareit.exception.ObjectNotFountException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.request.repository.ItemRequestRepository;
+import ru.practicum.shareit.trait.PageTrait;
 import ru.practicum.shareit.user.UserService;
 import ru.practicum.shareit.user.model.User;
 
@@ -23,7 +23,7 @@ import java.util.Collection;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ItemRequestServiceImpl implements ItemRequestService {
+public class ItemRequestServiceImpl implements ItemRequestService, PageTrait {
     private final UserService userService;
 
     private final ItemRequestRepository itemRequestRepository;
@@ -75,8 +75,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
             throw new InvalidParameterException("Передан некорректный параметр size", "getAllItemRequest");
         }
 
-        Sort sortById = Sort.by(Sort.Direction.ASC, "created");
-        Pageable page = PageRequest.of((from / size), size, sortById);
+        Pageable page = getPage(from, size, "created", Sort.Direction.ASC);
 
         return itemRequestRepository.findAllByRequestorIdNotOrderByCreatedDesc(userId, page);
     }

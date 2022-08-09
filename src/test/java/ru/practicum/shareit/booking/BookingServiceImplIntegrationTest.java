@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.enums.BookingState;
 import ru.practicum.shareit.enums.BookingStatus;
 import ru.practicum.shareit.exception.ObjectNotFountException;
 import ru.practicum.shareit.item.ItemService;
@@ -48,7 +49,7 @@ class BookingServiceImplIntegrationTest {
         bookingService.createBooking(mockUser2.getId(), mockBooking1);
         bookingService.createBooking(mockUser2.getId(), mockBooking2);
 
-        Collection<Booking> bookings = bookingService.getAllByBookerId(mockUser2.getId(), "WAITING", 0, 20);
+        Collection<Booking> bookings = bookingService.getAllByBookerId(mockUser2.getId(), BookingState.WAITING, 0, 20);
 
         assertThat(bookings, hasSize(2));
         assertThat(bookings.stream().findFirst().isPresent(), is(true));
@@ -60,7 +61,7 @@ class BookingServiceImplIntegrationTest {
     @Test
     void testGetAllByBookerIdWrongUser() {
         Exception exception = assertThrows(ObjectNotFountException.class, () ->
-                bookingService.getAllByBookerId(mockUser2.getId(), "WAITING", 0, 20));
+                bookingService.getAllByBookerId(mockUser2.getId(), BookingState.WAITING, 0, 20));
 
         assertEquals("Пользователь с id 2 не существует", exception.getMessage());
     }

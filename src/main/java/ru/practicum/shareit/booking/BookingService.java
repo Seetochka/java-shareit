@@ -1,8 +1,8 @@
 package ru.practicum.shareit.booking;
 
 import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.enums.BookingState;
 import ru.practicum.shareit.exception.ObjectNotFountException;
-import ru.practicum.shareit.exception.UnsupportedStatusException;
 import ru.practicum.shareit.exception.UserHaveNoRightsException;
 import ru.practicum.shareit.exception.ValidationException;
 
@@ -33,12 +33,12 @@ public interface BookingService {
     /**
      * Получение всех бронирований текущего пользователя
      */
-    Collection<Booking> getAllByBookerId(long userId, String state, int from, int size)
-            throws ObjectNotFountException, UnsupportedStatusException;
+    Collection<Booking> getAllByBookerId(long userId, BookingState state, int from, int size)
+            throws ObjectNotFountException;
 
     /**
      * Получение бронирований для всех вещей текущего пользователя
      */
-    Collection<Booking> getAllByOwnerId(long userId, String state, int from, int size)
-            throws ObjectNotFountException, UnsupportedStatusException;
+    Collection<Booking> getAllByOwnerId(long userId, BookingState state, int from, int size)
+            throws ObjectNotFountException;
 }

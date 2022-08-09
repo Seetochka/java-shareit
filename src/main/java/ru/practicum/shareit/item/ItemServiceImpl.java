@@ -2,7 +2,6 @@ package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -17,6 +16,7 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.CommentRepository;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.request.ItemRequestService;
+import ru.practicum.shareit.trait.PageTrait;
 import ru.practicum.shareit.user.UserService;
 import ru.practicum.shareit.user.model.User;
 
@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ItemServiceImpl implements ItemService {
+public class ItemServiceImpl implements ItemService, PageTrait {
     private final UserService userService;
     private final ItemRequestService itemRequestService;
 
@@ -91,8 +91,7 @@ public class ItemServiceImpl implements ItemService {
     public Collection<Item> getAllByUserId(long userId, int from, int size) throws ObjectNotFountException {
         userService.checkUserExistsById(userId);
 
-        Sort sortById = Sort.by(Sort.Direction.ASC, "id");
-        Pageable page = PageRequest.of((from / size), size, sortById);
+        Pageable page = getPage(from, size, "id", Sort.Direction.ASC);
 
         return itemRepository.findAllByOwnerId(userId, page)
                 .stream()
@@ -142,8 +141,7 @@ public class ItemServiceImpl implements ItemService {
             return Collections.emptyList();
         }
 
-        Sort sortById = Sort.by(Sort.Direction.ASC, "id");
-        Pageable page = PageRequest.of((from / size), size, sortById);
+        Pageable page = getPage(from, size, "id", Sort.Direction.ASC);
 
         return itemRepository.search(text, page);
     }

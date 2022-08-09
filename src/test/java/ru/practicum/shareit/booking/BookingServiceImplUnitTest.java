@@ -12,9 +12,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Pageable;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.repository.BookingRepository;
+import ru.practicum.shareit.enums.BookingState;
 import ru.practicum.shareit.enums.BookingStatus;
 import ru.practicum.shareit.exception.ObjectNotFountException;
-import ru.practicum.shareit.exception.UnsupportedStatusException;
 import ru.practicum.shareit.exception.UserHaveNoRightsException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.ItemService;
@@ -232,11 +232,11 @@ class BookingServiceImplUnitTest {
     }
 
     @Test
-    void testGetAllByBookerIdByStateAll() throws ObjectNotFountException, UnsupportedStatusException {
+    void testGetAllByBookerIdByStateAll() throws ObjectNotFountException {
         Mockito.when(bookingRepository.findAllByBookerId(Mockito.any(Long.class), Mockito.any(Pageable.class)))
                 .thenReturn(List.of(mockBooking1, mockBooking2, mockBooking3));
 
-        Collection<Booking> bookings = bookingService.getAllByBookerId(1L, "ALL", 0, 20);
+        Collection<Booking> bookings = bookingService.getAllByBookerId(1L, BookingState.ALL, 0, 20);
 
         Mockito.verify(bookingRepository, Mockito.times(1))
                 .findAllByBookerId(Mockito.any(Long.class), Mockito.any(Pageable.class));
@@ -246,12 +246,12 @@ class BookingServiceImplUnitTest {
     }
 
     @Test
-    void testGetAllByBookerIdByStateCurrent() throws ObjectNotFountException, UnsupportedStatusException {
+    void testGetAllByBookerIdByStateCurrent() throws ObjectNotFountException {
         Mockito.when(bookingRepository.findAllByBookerIdAndEndIsAfterAndStartIsBefore(Mockito.any(Long.class),
                         Mockito.any(LocalDateTime.class), Mockito.any(LocalDateTime.class), Mockito.any(Pageable.class)))
                 .thenReturn(List.of(mockBooking2, mockBooking3));
 
-        Collection<Booking> bookings = bookingService.getAllByBookerId(1L, "CURRENT", 0, 20);
+        Collection<Booking> bookings = bookingService.getAllByBookerId(1L, BookingState.CURRENT, 0, 20);
 
         Mockito.verify(bookingRepository, Mockito.times(1))
                 .findAllByBookerIdAndEndIsAfterAndStartIsBefore(Mockito.any(Long.class),
@@ -262,12 +262,12 @@ class BookingServiceImplUnitTest {
     }
 
     @Test
-    void testGetAllByBookerIdByStatePast() throws ObjectNotFountException, UnsupportedStatusException {
+    void testGetAllByBookerIdByStatePast() throws ObjectNotFountException {
         Mockito.when(bookingRepository.findAllByBookerIdAndEndIsBefore(Mockito.any(Long.class),
                         Mockito.any(LocalDateTime.class), Mockito.any(Pageable.class)))
                 .thenReturn(List.of(mockBooking1, mockBooking2));
 
-        Collection<Booking> bookings = bookingService.getAllByBookerId(1L, "PAST", 0, 20);
+        Collection<Booking> bookings = bookingService.getAllByBookerId(1L, BookingState.PAST, 0, 20);
 
         Mockito.verify(bookingRepository, Mockito.times(1))
                 .findAllByBookerIdAndEndIsBefore(Mockito.any(Long.class), Mockito.any(LocalDateTime.class),
@@ -278,12 +278,12 @@ class BookingServiceImplUnitTest {
     }
 
     @Test
-    void testGetAllByBookerIdByStateFuture() throws ObjectNotFountException, UnsupportedStatusException {
+    void testGetAllByBookerIdByStateFuture() throws ObjectNotFountException {
         Mockito.when(bookingRepository.findAllByBookerIdAndStartIsAfter(Mockito.any(Long.class),
                         Mockito.any(LocalDateTime.class), Mockito.any(Pageable.class)))
                 .thenReturn(List.of(mockBooking1, mockBooking3));
 
-        Collection<Booking> bookings = bookingService.getAllByBookerId(1L, "FUTURE", 0, 20);
+        Collection<Booking> bookings = bookingService.getAllByBookerId(1L, BookingState.FUTURE, 0, 20);
 
         Mockito.verify(bookingRepository, Mockito.times(1))
                 .findAllByBookerIdAndStartIsAfter(Mockito.any(Long.class), Mockito.any(LocalDateTime.class),
@@ -294,12 +294,12 @@ class BookingServiceImplUnitTest {
     }
 
     @Test
-    void testGetAllByBookerIdByStateWaiting() throws ObjectNotFountException, UnsupportedStatusException {
+    void testGetAllByBookerIdByStateWaiting() throws ObjectNotFountException {
         Mockito.when(bookingRepository.findAllByBookerIdAndStatus(Mockito.any(Long.class),
                         Mockito.any(BookingStatus.class), Mockito.any(Pageable.class)))
                 .thenReturn(List.of(mockBooking3));
 
-        Collection<Booking> bookings = bookingService.getAllByBookerId(1L, "WAITING", 0, 20);
+        Collection<Booking> bookings = bookingService.getAllByBookerId(1L, BookingState.WAITING, 0, 20);
 
         Mockito.verify(bookingRepository, Mockito.times(1))
                 .findAllByBookerIdAndStatus(Mockito.any(Long.class), Mockito.any(BookingStatus.class),
@@ -310,12 +310,12 @@ class BookingServiceImplUnitTest {
     }
 
     @Test
-    void testGetAllByBookerIdByStateRejected() throws ObjectNotFountException, UnsupportedStatusException {
+    void testGetAllByBookerIdByStateRejected() throws ObjectNotFountException {
         Mockito.when(bookingRepository.findAllByBookerIdAndStatus(Mockito.any(Long.class),
                         Mockito.any(BookingStatus.class), Mockito.any(Pageable.class)))
                 .thenReturn(List.of(mockBooking2));
 
-        Collection<Booking> bookings = bookingService.getAllByBookerId(1L, "REJECTED", 0, 20);
+        Collection<Booking> bookings = bookingService.getAllByBookerId(1L, BookingState.REJECTED, 0, 20);
 
         Mockito.verify(bookingRepository, Mockito.times(1))
                 .findAllByBookerIdAndStatus(Mockito.any(Long.class), Mockito.any(BookingStatus.class),
@@ -326,19 +326,11 @@ class BookingServiceImplUnitTest {
     }
 
     @Test
-    void testGetAllByBookerIdByStateUnsupported() {
-        Exception exception = assertThrows(UnsupportedStatusException.class, () ->
-                bookingService.getAllByBookerId(1L, "UNSUPPORTED_STATUS", 0, 20));
-
-        assertEquals("Получен неподдерживаемый статус UNSUPPORTED_STATUS", exception.getMessage());
-    }
-
-    @Test
-    void testGetAllByOwnerIdByStateAll() throws ObjectNotFountException, UnsupportedStatusException {
+    void testGetAllByOwnerIdByStateAll() throws ObjectNotFountException {
         Mockito.when(bookingRepository.findAllByItemOwnerId(Mockito.any(Long.class), Mockito.any(Pageable.class)))
                 .thenReturn(List.of(mockBooking1, mockBooking2, mockBooking3));
 
-        Collection<Booking> bookings = bookingService.getAllByOwnerId(1L, "ALL", 0, 20);
+        Collection<Booking> bookings = bookingService.getAllByOwnerId(1L, BookingState.ALL, 0, 20);
 
         Mockito.verify(bookingRepository, Mockito.times(1))
                 .findAllByItemOwnerId(Mockito.any(Long.class), Mockito.any(Pageable.class));
@@ -348,12 +340,12 @@ class BookingServiceImplUnitTest {
     }
 
     @Test
-    void testGetAllByOwnerIdByStateCurrent() throws ObjectNotFountException, UnsupportedStatusException {
+    void testGetAllByOwnerIdByStateCurrent() throws ObjectNotFountException {
         Mockito.when(bookingRepository.findAllByItemOwnerIdAndEndIsAfterAndStartIsBefore(Mockito.any(Long.class),
                         Mockito.any(LocalDateTime.class), Mockito.any(LocalDateTime.class), Mockito.any(Pageable.class)))
                 .thenReturn(List.of(mockBooking2, mockBooking3));
 
-        Collection<Booking> bookings = bookingService.getAllByOwnerId(1L, "CURRENT", 0, 20);
+        Collection<Booking> bookings = bookingService.getAllByOwnerId(1L, BookingState.CURRENT, 0, 20);
 
         Mockito.verify(bookingRepository, Mockito.times(1))
                 .findAllByItemOwnerIdAndEndIsAfterAndStartIsBefore(Mockito.any(Long.class),
@@ -364,12 +356,12 @@ class BookingServiceImplUnitTest {
     }
 
     @Test
-    void testGetAllByOwnerIdByStatePast() throws ObjectNotFountException, UnsupportedStatusException {
+    void testGetAllByOwnerIdByStatePast() throws ObjectNotFountException {
         Mockito.when(bookingRepository.findAllByItemOwnerIdAndEndIsBefore(Mockito.any(Long.class),
                         Mockito.any(LocalDateTime.class), Mockito.any(Pageable.class)))
                 .thenReturn(List.of(mockBooking1, mockBooking2));
 
-        Collection<Booking> bookings = bookingService.getAllByOwnerId(1L, "PAST", 0, 20);
+        Collection<Booking> bookings = bookingService.getAllByOwnerId(1L, BookingState.PAST, 0, 20);
 
         Mockito.verify(bookingRepository, Mockito.times(1))
                 .findAllByItemOwnerIdAndEndIsBefore(Mockito.any(Long.class), Mockito.any(LocalDateTime.class),
@@ -380,12 +372,12 @@ class BookingServiceImplUnitTest {
     }
 
     @Test
-    void testGetAllByOwnerIdByStateFuture() throws ObjectNotFountException, UnsupportedStatusException {
+    void testGetAllByOwnerIdByStateFuture() throws ObjectNotFountException {
         Mockito.when(bookingRepository.findAllByItemOwnerIdAndStartIsAfter(Mockito.any(Long.class),
                         Mockito.any(LocalDateTime.class), Mockito.any(Pageable.class)))
                 .thenReturn(List.of(mockBooking1, mockBooking3));
 
-        Collection<Booking> bookings = bookingService.getAllByOwnerId(1L, "FUTURE", 0, 20);
+        Collection<Booking> bookings = bookingService.getAllByOwnerId(1L, BookingState.FUTURE, 0, 20);
 
         Mockito.verify(bookingRepository, Mockito.times(1))
                 .findAllByItemOwnerIdAndStartIsAfter(Mockito.any(Long.class), Mockito.any(LocalDateTime.class),
@@ -396,12 +388,12 @@ class BookingServiceImplUnitTest {
     }
 
     @Test
-    void testGetAllByOwnerIdByStateWaiting() throws ObjectNotFountException, UnsupportedStatusException {
+    void testGetAllByOwnerIdByStateWaiting() throws ObjectNotFountException {
         Mockito.when(bookingRepository.findAllByItemOwnerIdAndStatus(Mockito.any(Long.class),
                         Mockito.any(BookingStatus.class), Mockito.any(Pageable.class)))
                 .thenReturn(List.of(mockBooking3));
 
-        Collection<Booking> bookings = bookingService.getAllByOwnerId(1L, "WAITING", 0, 20);
+        Collection<Booking> bookings = bookingService.getAllByOwnerId(1L, BookingState.WAITING, 0, 20);
 
         Mockito.verify(bookingRepository, Mockito.times(1))
                 .findAllByItemOwnerIdAndStatus(Mockito.any(Long.class), Mockito.any(BookingStatus.class),
@@ -412,12 +404,12 @@ class BookingServiceImplUnitTest {
     }
 
     @Test
-    void testGetAllByOwnerIdByStateRejected() throws ObjectNotFountException, UnsupportedStatusException {
+    void testGetAllByOwnerIdByStateRejected() throws ObjectNotFountException {
         Mockito.when(bookingRepository.findAllByItemOwnerIdAndStatus(Mockito.any(Long.class),
                         Mockito.any(BookingStatus.class), Mockito.any(Pageable.class)))
                 .thenReturn(List.of(mockBooking2));
 
-        Collection<Booking> bookings = bookingService.getAllByOwnerId(1L, "REJECTED", 0, 20);
+        Collection<Booking> bookings = bookingService.getAllByOwnerId(1L, BookingState.REJECTED, 0, 20);
 
         Mockito.verify(bookingRepository, Mockito.times(1))
                 .findAllByItemOwnerIdAndStatus(Mockito.any(Long.class), Mockito.any(BookingStatus.class),
@@ -425,13 +417,5 @@ class BookingServiceImplUnitTest {
 
         assertThat(bookings, hasSize(1));
         assertThat(bookings, equalTo(List.of(mockBooking2)));
-    }
-
-    @Test
-    void testGetAllByOwnerIdByStateUnsupported() {
-        Exception exception = assertThrows(UnsupportedStatusException.class, () ->
-                bookingService.getAllByOwnerId(1L, "UNSUPPORTED_STATUS", 0, 20));
-
-        assertEquals("Получен неподдерживаемый статус UNSUPPORTED_STATUS", exception.getMessage());
     }
 }

@@ -11,8 +11,8 @@ import ru.practicum.shareit.booking.dto.CreatedBookingDto;
 import ru.practicum.shareit.booking.dto.GottenBookingDto;
 import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.enums.BookingState;
 import ru.practicum.shareit.enums.BookingStatus;
-import ru.practicum.shareit.exception.UnsupportedStatusException;
 import ru.practicum.shareit.exception.UserHaveNoRightsException;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
@@ -149,7 +149,7 @@ class BookingControllerTest {
 
     @Test
     void testGetAllByBookerId() throws Exception {
-        when(bookingService.getAllByBookerId(any(Long.class), any(String.class), any(Integer.class), any(Integer.class)))
+        when(bookingService.getAllByBookerId(any(Long.class), any(BookingState.class), any(Integer.class), any(Integer.class)))
                 .thenReturn(List.of(mockBooking));
         doReturn(mockGottenBookingDto).when(bookingMapper).toGottenBookingDto(any());
 
@@ -172,8 +172,26 @@ class BookingControllerTest {
     }
 
     @Test
+    void testGetAllByBookerIdByStateUnsupported() throws Exception {
+        when(bookingService.getAllByBookerId(any(Long.class), any(BookingState.class), any(Integer.class), any(Integer.class)))
+                .thenReturn(List.of(mockBooking));
+        doReturn(mockGottenBookingDto).when(bookingMapper).toGottenBookingDto(any());
+
+        mvc.perform(get("/bookings")
+                        .content(mapper.writeValueAsString(mockGottenBookingDto))
+                        .characterEncoding(StandardCharsets.UTF_8)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header(HEADER_USER_ID, 1)
+                        .queryParam("state", "UNSUPPORTED_STATUS"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.error", is("Unknown state: UNSUPPORTED_STATUS")));
+    }
+
+    @Test
     void testGetAllByOwnerId() throws Exception {
-        when(bookingService.getAllByOwnerId(any(Long.class), any(String.class), any(Integer.class), any(Integer.class)))
+        when(bookingService.getAllByOwnerId(any(Long.class), any(BookingState.class), any(Integer.class), any(Integer.class)))
                 .thenReturn(List.of(mockBooking));
         doReturn(mockGottenBookingDto).when(bookingMapper).toGottenBookingDto(any());
 
@@ -196,17 +214,18 @@ class BookingControllerTest {
     }
 
     @Test
-    void testGetAllByOwnerIdWithUnsupportedStatus() throws Exception {
-        when(bookingService.getAllByOwnerId(any(Long.class), any(String.class), any(Integer.class), any(Integer.class)))
-                .thenThrow(new UnsupportedStatusException("TestGetAllByOwnerIdWithUnsupportedStatus",
-                        "TestGetAllByOwnerIdWithUnsupportedStatus"));
+    void testGetAllByOwnerIdByStateUnsupported() throws Exception {
+        when(bookingService.getAllByOwnerId(any(Long.class), any(BookingState.class), any(Integer.class), any(Integer.class)))
+                .thenReturn(List.of(mockBooking));
+        doReturn(mockGottenBookingDto).when(bookingMapper).toGottenBookingDto(any());
 
         mvc.perform(get("/bookings/owner")
                         .content(mapper.writeValueAsString(mockGottenBookingDto))
                         .characterEncoding(StandardCharsets.UTF_8)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .header(HEADER_USER_ID, 1))
+                        .header(HEADER_USER_ID, 1)
+                        .queryParam("state", "UNSUPPORTED_STATUS"))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.error", is("Unknown state: UNSUPPORTED_STATUS")));
