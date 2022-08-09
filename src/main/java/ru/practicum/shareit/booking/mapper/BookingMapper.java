@@ -90,18 +90,10 @@ public class BookingMapper {
     }
 
     private GottenBookingDto.User toUserGottenBookingDtoBooking(User user) {
-        return new GottenBookingDto.User(
-                user.getId(),
-                user.getName(),
-                user.getEmail()
-        );
+        return new GottenBookingDto.User(user.getId(), user.getName(), user.getEmail());
     }
 
     private User toUser(GottenBookingDto.User bookingUser) {
-        return new User(
-                bookingUser.getId(),
-                bookingUser.getName(),
-                bookingUser.getEmail()
-        );
+        return new User(bookingUser.getId(), bookingUser.getName(), bookingUser.getEmail());
     }
 }

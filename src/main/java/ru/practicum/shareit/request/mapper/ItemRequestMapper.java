@@ -1,9 +1,13 @@
 package ru.practicum.shareit.request.mapper;
 
 import org.springframework.stereotype.Component;
+import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.model.User;
+
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Маппер запроса вещи
@@ -13,24 +17,27 @@ public class ItemRequestMapper {
     /**
      * Преобразование модели в DTO
      */
-    public ItemRequestDto toItemDto(ItemRequest item) {
+    public ItemRequestDto toItemRequestDto(ItemRequest item) {
         return new ItemRequestDto(
                 item.getId(),
                 item.getDescription(),
                 toUserItemRequest(item.getRequestor()),
-                item.getCreated()
+                item.getCreated(),
+                item.getItems().stream().map(this::toItemItemRequest).collect(Collectors.toList())
         );
     }
 
     /**
      * Преобразование DTO в модель
      */
-    public ItemRequest toItem(ItemRequestDto itemDto) {
+    public ItemRequest toItemRequest(ItemRequestDto itemRequestDto) {
         return new ItemRequest(
-                itemDto.getId(),
-                itemDto.getDescription(),
-                toUser(itemDto.getRequestor()),
-                itemDto.getCreated()
+                itemRequestDto.getId(),
+                itemRequestDto.getDescription(),
+                Optional.ofNullable(itemRequestDto.getRequestor()).map(this::toUser).orElse(null),
+                itemRequestDto.getCreated(),
+                itemRequestDto.getItems().stream().map(this::toItem).collect(Collectors.toList())
+
         );
     }
 
@@ -47,6 +54,30 @@ public class ItemRequestMapper {
                 bookingUser.getId(),
                 bookingUser.getName(),
                 bookingUser.getEmail()
+        );
+    }
+
+    private ItemRequestDto.Item toItemItemRequest(Item item) {
+        return new ItemRequestDto.Item(
+                item.getId(),
+                item.getName(),
+                item.getDescription(),
+                item.getAvailable(),
+                item.getRequest().getId()
+        );
+    }
+
+    private Item toItem(ItemRequestDto.Item itemItemRequestDto) {
+        return new Item(
+                itemItemRequestDto.getId(),
+                itemItemRequestDto.getName(),
+                itemItemRequestDto.getDescription(),
+                itemItemRequestDto.getAvailable(),
+                null,
+                new ItemRequest(itemItemRequestDto.getId(), null, null, null, null),
+                null,
+                null,
+                null
         );
     }
 }

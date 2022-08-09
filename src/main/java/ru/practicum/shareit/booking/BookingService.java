@@ -33,10 +33,12 @@ public interface BookingService {
     /**
      * Получение всех бронирований текущего пользователя
      */
-    Collection<Booking> getAllByBookerId(long userId, BookingState state) throws ObjectNotFountException;
+    Collection<Booking> getAllByBookerId(long userId, BookingState state, int from, int size)
+            throws ObjectNotFountException;
 
     /**
      * Получение бронирований для всех вещей текущего пользователя
      */
-    Collection<Booking> getAllByOwnerId(long userId, BookingState state) throws ObjectNotFountException;
+    Collection<Booking> getAllByOwnerId(long userId, BookingState state, int from, int size)
+            throws ObjectNotFountException;
 }
